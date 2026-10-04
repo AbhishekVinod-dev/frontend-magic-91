@@ -35,8 +35,8 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
   const [rates, setRatesState] = useState({ firstHour: 20, extraHour: 10, dailyMax: 100 });
   const addEvent = (kind: string, detail: string, tone: Event["tone"]) => setEvents(prev => [{ id: Date.now(), kind, detail, time: new Date().toLocaleTimeString("en-IN", { hour12: false }), tone }, ...prev]);
   const updateSlot = (id: string, status: SlotStatus) => {
-    setSlots(prev => prev.map(slot => slot.id === id ? { ...slot, status, vehicle: status === "occupied" ? slot.vehicle : undefined } : slot));
-    addEvent("Slot status updated", `${id} · ${status[0].toUpperCase()}${status.slice(1)}`, status === "available" ? "success" : status === "occupied" ? "danger" : "warning");
+    setSlots(prev => prev.map(slot => slot.id === id ? { ...slot, status, ...(status === "occupied" && slot.vehicle ? { vehicle: slot.vehicle } : { vehicle: undefined }) } : slot));
+    addEvent("Slot status updated", `${id} · ${status.charAt(0).toUpperCase()}${status.slice(1)}`, status === "available" ? "success" : status === "occupied" ? "danger" : "warning");
   };
   const reserveSlot = (id: string, plate: string, arrival: string) => {
     setSlots(prev => prev.map(slot => slot.id === id ? { ...slot, status: "reserved" } : slot));

@@ -9,7 +9,7 @@ const themes = {
   maintenance: { surface: "bg-muted border-border", icon: "text-muted-foreground", label: "Maintenance", badge: "bg-muted-foreground" },
 };
 export function StatusPill({ status }: { status: Slot["status"] }) { const t = themes[status]; return <span className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-[11px] font-semibold ${t.surface} ${t.icon}`}><span className={`size-1.5 rounded-full ${t.badge}`}/>{t.label}</span>; }
-export function ParkingMap({ compact = false, onSelect, selected }: { compact?: boolean; onSelect?: (id: string) => void; selected?: string }) {
+export function ParkingMap({ compact = false, onSelect, selected }: { compact?: boolean; onSelect?: (id: string) => void; selected?: string | undefined }) {
   const { slots } = useParking();
   return <div className="relative overflow-hidden rounded-md border border-border bg-canvas p-4 sm:p-6">
     <div className="mb-5 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground"><span className="h-px w-9 bg-border"/> Entrance <ArrowDown size={13}/><span className="h-px w-9 bg-border"/></div>
