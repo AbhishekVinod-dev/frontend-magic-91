@@ -5,9 +5,121 @@ import { AppShell, SectionHeading } from "@/components/AppShell";
 import { Button } from "@/components/Button";
 import { useParking } from "@/lib/parking-context";
 import { pageMeta } from "@/lib/page-meta";
-export const Route = createFileRoute("/settings")({ head: () => pageMeta("Settings", "Review facility information and configure SmartPark parking rates."), component: SettingsPage });
+
+export const Route = createFileRoute("/settings")({
+  head: () =>
+    pageMeta("Settings", "Review facility information and configure SmartPark parking rates."),
+  component: SettingsPage,
+});
+
+const rateFields = [
+  { key: "firstHour", label: "First hour", help: "Flat rate for the first hour" },
+  { key: "extraHour", label: "Every additional hour", help: "Charged for each additional started hour" },
+  { key: "dailyMax", label: "Daily maximum", help: "The maximum fee for one day" },
+] as const;
+
 function SettingsPage() {
-  const parking = useParking(); const [rates, setRates] = useState({ firstHour: parking.firstHour, extraHour: parking.extraHour, dailyMax: parking.dailyMax }); const [saved, setSaved] = useState(false);
-  function save(e: FormEvent) { e.preventDefault(); parking.setRates(rates); setSaved(true); window.setTimeout(() => setSaved(false), 3000); }
-  return <AppShell title="Settings" description="Configure rates and review your parking facility."><div className="grid gap-6 xl:grid-cols-2"><section className="panel p-5 sm:p-6"><SectionHeading title="Parking rates" aside={<IndianRupee size={18} className="text-muted-foreground"/>}/><p className="mb-6 text-xs leading-5 text-muted-foreground">Set the rates used for fee estimates in the driver view.</p><form onSubmit={save} className="space-y-5">{([{ key: "firstHour", label: "First hour", help: "Flat rate for the first hour" }, { key: "extraHour", label: "Every additional hour", help: "Charged for each additional started hour" }, { key: "dailyMax", label: "Daily maximum", help: "The maximum fee for one day" }] as const).map(item => <label key={item.key} className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-5"><span><span className="block text-sm font-semibold">{item.label}</span><span className="mt-1 block text-xs text-muted-foreground">{item.help}</span></span><span className="surface-input flex h-10 w-28 items-center px-3 text-sm"><span className="text-muted-foreground">₹</span><input type="number" min="0" required value={rates[item.key]} onChange={e => setRates({ ...rates, [item.key]: Number(e.target.value) })} className="w-full bg-transparent pl-2 outline-none"/></span></label>)}<div className="flex items-center justify-between gap-3"><span role="status" className="flex items-center gap-1 text-xs text-success">{saved && <><Check size={14}/> Rates saved for this preview</>}</span><Button type="submit">Save rates</Button></div></form></section><section className="panel h-fit p-5 sm:p-6"><SectionHeading title="Facility information" aside={<Settings2 size={18} className="text-muted-foreground"/>}/><div className="flex items-center gap-4 rounded-md bg-canvas p-4"><span className="flex size-12 items-center justify-center rounded-md bg-info-soft text-info"><MapPin size={22}/></span><div><div className="font-display font-bold">SmartPark Main Facility</div><div className="mt-1 text-xs text-muted-foreground">Single-location parking</div></div></div><div className="mt-5 divide-y divide-border">{[["Total spaces", `${parking.slots.length} slots`], ["Available spaces", `${parking.slots.filter(s => s.status === "available").length} slots`], ["Controller", "ESP32-PARK-001"], ["Gate", "Automatic servo gate"], ["Currency", "Indian Rupee (₹)"]].map(([label, value]) => <div key={label} className="flex justify-between gap-4 py-3 text-xs"><span className="text-muted-foreground">{label}</span><span className="font-semibold">{value}</span></div>)}</div></section></div></AppShell>;
+  const parking = useParking();
+  const [rates, setRates] = useState({
+    firstHour: parking.firstHour,
+    extraHour: parking.extraHour,
+    dailyMax: parking.dailyMax,
+  });
+  const [saved, setSaved] = useState(false);
+
+  function save(event: FormEvent) {
+    event.preventDefault();
+    parking.setRates(rates);
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 3000);
+  }
+
+  const details = [
+    ["Total spaces", `${parking.slots.length} slots`],
+    ["Available spaces", `${parking.slots.filter(s => s.status === "available").length} slots`],
+    ["Controller", "ESP32-PARK-001"],
+    ["Gate", "Automatic servo gate"],
+    ["Currency", "Indian Rupee (₹)"],
+  ];
+
+  return (
+    <AppShell
+      title="Settings"
+      description="Configure rates and review your parking facility."
+    >
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section className="panel p-5 sm:p-6">
+          <SectionHeading
+            title="Parking rates"
+            aside={<IndianRupee size={18} className="text-muted-foreground" />}
+          />
+          <p className="mb-6 text-xs leading-5 text-muted-foreground">
+            Set the rates used for fee estimates in the driver view.
+          </p>
+
+          <form onSubmit={save} className="space-y-5">
+            {rateFields.map(field => (
+              <label
+                key={field.key}
+                className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-5 last:border-0"
+              >
+                <span>
+                  <span className="block text-sm font-semibold">{field.label}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{field.help}</span>
+                </span>
+                <span className="surface-input flex h-10 w-28 items-center px-3 text-sm">
+                  <span className="text-muted-foreground">₹</span>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={rates[field.key]}
+                    onChange={event =>
+                      setRates({ ...rates, [field.key]: Number(event.target.value) })
+                    }
+                    className="w-full bg-transparent pl-2 outline-none"
+                  />
+                </span>
+              </label>
+            ))}
+
+            <div className="flex items-center justify-between gap-3">
+              <span role="status" className="flex items-center gap-1 text-xs text-success">
+                {saved && (
+                  <>
+                    <Check size={14} /> Rates saved for this preview
+                  </>
+                )}
+              </span>
+              <Button type="submit">Save rates</Button>
+            </div>
+          </form>
+        </section>
+
+        <section className="panel h-fit p-5 sm:p-6">
+          <SectionHeading
+            title="Facility information"
+            aside={<Settings2 size={18} className="text-muted-foreground" />}
+          />
+          <div className="flex items-center gap-4 rounded-md bg-canvas p-4">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-info-soft text-info">
+              <MapPin size={22} />
+            </span>
+            <div>
+              <div className="font-display font-bold">SmartPark Main Facility</div>
+              <div className="mt-1 text-xs text-muted-foreground">Single-location parking</div>
+            </div>
+          </div>
+          <div className="mt-5 divide-y divide-border">
+            {details.map(([label, value]) => (
+              <div key={label} className="flex justify-between gap-4 py-3 text-xs">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-semibold">{value}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </AppShell>
+  );
 }

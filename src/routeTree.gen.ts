@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as DevicesRouteImport } from './routes/devices'
 import { Route as DriverRouteImport } from './routes/driver'
+import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as ParkingRouteImport } from './routes/parking'
 import { Route as SessionsRouteImport } from './routes/sessions'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -36,6 +37,11 @@ const DevicesRoute = DevicesRouteImport.update({
 const DriverRoute = DriverRouteImport.update({
   id: '/driver',
   path: '/driver',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OverviewRoute = OverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkingRoute = ParkingRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/devices': typeof DevicesRoute
   '/driver': typeof DriverRoute
+  '/overview': typeof OverviewRoute
   '/parking': typeof ParkingRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/devices': typeof DevicesRoute
   '/driver': typeof DriverRoute
+  '/overview': typeof OverviewRoute
   '/parking': typeof ParkingRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/devices': typeof DevicesRoute
   '/driver': typeof DriverRoute
+  '/overview': typeof OverviewRoute
   '/parking': typeof ParkingRoute
   '/sessions': typeof SessionsRoute
   '/settings': typeof SettingsRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/devices'
     | '/driver'
+    | '/overview'
     | '/parking'
     | '/sessions'
     | '/settings'
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/devices'
     | '/driver'
+    | '/overview'
     | '/parking'
     | '/sessions'
     | '/settings'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/devices'
     | '/driver'
+    | '/overview'
     | '/parking'
     | '/sessions'
     | '/settings'
@@ -128,6 +140,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   DevicesRoute: typeof DevicesRoute
   DriverRoute: typeof DriverRoute
+  OverviewRoute: typeof OverviewRoute
   ParkingRoute: typeof ParkingRoute
   SessionsRoute: typeof SessionsRoute
   SettingsRoute: typeof SettingsRoute
@@ -162,6 +175,13 @@ declare module '@tanstack/react-router' {
       path: '/driver'
       fullPath: '/driver'
       preLoaderRoute: typeof DriverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/overview': {
+      id: '/overview'
+      path: '/overview'
+      fullPath: '/overview'
+      preLoaderRoute: typeof OverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parking': {
@@ -200,6 +220,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   DevicesRoute: DevicesRoute,
   DriverRoute: DriverRoute,
+  OverviewRoute: OverviewRoute,
   ParkingRoute: ParkingRoute,
   SessionsRoute: SessionsRoute,
   SettingsRoute: SettingsRoute,

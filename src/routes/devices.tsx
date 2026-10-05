@@ -2,8 +2,109 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Activity, Cpu, DoorOpen, Radio, Router, Wifi, Zap } from "lucide-react";
 import { AppShell, SectionHeading } from "@/components/AppShell";
 import { pageMeta } from "@/lib/page-meta";
-export const Route = createFileRoute("/devices")({ head: () => pageMeta("Devices", "Monitor ESP32 controller, sensors, connectivity and gate health."), component: DevicesPage });
+
+export const Route = createFileRoute("/devices")({
+  head: () =>
+    pageMeta("Devices", "Monitor ESP32 controller, sensors, connectivity and gate health."),
+  component: DevicesPage,
+});
+
+const sensors = [
+  "Entrance IR",
+  "Exit IR",
+  ...Array.from({ length: 8 }, (_, index) => `Slot S0${index + 1}`),
+];
+
+const stats = [
+  { label: "Connection", value: "Connected", detail: "Wi-Fi network", icon: Wifi },
+  { label: "Signal strength", value: "−62 dBm", detail: "Good connection", icon: Radio },
+  { label: "Gate servo", value: "Operational", detail: "Currently open", icon: DoorOpen },
+  { label: "Sensor network", value: "10 / 10", detail: "All sensors online", icon: Activity },
+];
+
+const details: Array<[string, string]> = [
+  ["Device ID", "ESP32-PARK-001"],
+  ["Device type", "ESP32 controller"],
+  ["Network", "SmartPark Wi-Fi"],
+  ["IP address", "192.168.1.104"],
+  ["Firmware", "v1.2.4"],
+  ["Last seen", "2 seconds ago"],
+];
+
 function DevicesPage() {
-  const sensors = ["Entrance IR", "Exit IR", "Slot S01", "Slot S02", "Slot S03", "Slot S04", "Slot S05", "Slot S06", "Slot S07", "Slot S08"];
-  return <AppShell title="Devices" description="Monitor your connected parking hardware and sensor health."><div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-md border border-success/20 bg-success-soft p-5"><div className="flex items-center gap-4"><span className="flex size-12 items-center justify-center rounded-md bg-card text-success"><Cpu size={25}/></span><div><h2 className="font-display text-lg font-bold">ESP32-PARK-001</h2><p className="mt-1 text-xs text-muted-foreground">Main parking controller · Last heartbeat 2 seconds ago</p></div></div><span className="flex items-center gap-2 rounded bg-card px-3 py-1.5 text-xs font-bold text-success"><span className="size-2 rounded-full bg-success status-pulse"/> ONLINE</span></div><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[{ label: "Connection", value: "Connected", detail: "Wi-Fi network", icon: Wifi }, { label: "Signal strength", value: "−62 dBm", detail: "Good connection", icon: Radio }, { label: "Gate servo", value: "Operational", detail: "Currently open", icon: DoorOpen }, { label: "Sensor network", value: "10 / 10", detail: "All sensors online", icon: Activity }].map(item => <div key={item.label} className="panel p-5"><span className="flex size-9 items-center justify-center rounded-md bg-info-soft text-info"><item.icon size={18}/></span><div className="mt-4 text-xs text-muted-foreground">{item.label}</div><div className="mt-1 font-display text-xl font-bold">{item.value}</div><div className="mt-2 text-[11px] text-muted-foreground">{item.detail}</div></div>)}</div><div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]"><section className="panel p-5 sm:p-6"><SectionHeading title="Sensor health" aside={<span className="text-xs font-semibold text-success">All online</span>}/><div className="grid gap-3 sm:grid-cols-2">{sensors.map((sensor, i) => <div key={sensor} className="flex items-center gap-3 rounded-md border border-border p-3"><span className="flex size-8 items-center justify-center rounded bg-muted text-muted-foreground">{i < 2 ? <Radio size={15}/> : <Zap size={15}/>}</span><div className="flex-1 text-xs font-semibold">{sensor}</div><span className="size-2 rounded-full bg-success"/><span className="text-[11px] font-medium text-success">Online</span></div>)}</div></section><section className="panel h-fit p-5 sm:p-6"><SectionHeading title="Controller details"/><div className="divide-y divide-border">{[["Device ID", "ESP32-PARK-001"], ["Device type", "ESP32 controller"], ["Network", "SmartPark Wi-Fi"], ["IP address", "192.168.1.104"], ["Firmware", "v1.2.4"], ["Last seen", "2 seconds ago"]].map(([label,value]) => <div key={label} className="flex justify-between gap-4 py-3 text-xs"><span className="text-muted-foreground">{label}</span><span className="font-semibold">{value}</span></div>)}</div><div className="mt-4 flex items-center gap-3 rounded bg-info-soft p-3 text-xs text-info"><Router size={18} className="shrink-0"/> Device readings shown here are sample data.</div></section></div></AppShell>;
+  return (
+    <AppShell
+      title="Devices"
+      description="Monitor your connected parking hardware and sensor health."
+    >
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-md border border-success/25 bg-success-soft p-5">
+        <div className="flex items-center gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-card text-success">
+            <Cpu size={25} />
+          </span>
+          <div>
+            <h2 className="font-display text-lg font-bold">ESP32-PARK-001</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Main parking controller &middot; last heartbeat 2 seconds ago
+            </p>
+          </div>
+        </div>
+        <span className="flex items-center gap-2 rounded bg-card px-3 py-1.5 text-xs font-bold text-success">
+          <span className="size-2 shrink-0 rounded-full bg-success status-pulse" /> ONLINE
+        </span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map(item => (
+          <div key={item.label} className="panel subtle-shadow p-5">
+            <span className="flex size-9 items-center justify-center rounded-md bg-info-soft text-info">
+              <item.icon size={18} />
+            </span>
+            <div className="mt-4 text-xs text-muted-foreground">{item.label}</div>
+            <div className="mt-1 font-display text-xl font-bold">{item.value}</div>
+            <div className="mt-2 text-[11px] text-muted-foreground">{item.detail}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
+        <section className="panel p-5 sm:p-6">
+          <SectionHeading
+            title="Sensor health"
+            aside={<span className="text-xs font-semibold text-success">All online</span>}
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {sensors.map((sensor, index) => (
+              <div
+                key={sensor}
+                className="flex items-center gap-3 rounded-md border border-border p-3 transition-colors hover:bg-canvas"
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
+                  {index < 2 ? <Radio size={15} /> : <Zap size={15} />}
+                </span>
+                <div className="flex-1 truncate text-xs font-semibold">{sensor}</div>
+                <span className="size-2 shrink-0 rounded-full bg-success status-pulse" />
+                <span className="shrink-0 text-[11px] font-medium text-success">Online</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel h-fit p-5 sm:p-6">
+          <SectionHeading title="Controller details" />
+          <div className="divide-y divide-border">
+            {details.map(([label, value]) => (
+              <div key={label} className="flex justify-between gap-4 py-3 text-xs">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-semibold">{value}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center gap-3 rounded bg-info-soft p-3 text-xs text-info">
+            <Router size={18} className="shrink-0" /> Device readings shown here are sample data.
+          </div>
+        </section>
+      </div>
+    </AppShell>
+  );
 }

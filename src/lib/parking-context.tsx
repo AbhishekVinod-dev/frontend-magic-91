@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 
 type SlotStatus = "available" | "occupied" | "reserved" | "maintenance";
-export type Slot = { id: string; status: SlotStatus; vehicle?: string };
+export type Slot = { id: string; status: SlotStatus; vehicle?: string | undefined };
 export type Vehicle = { plate: string; type: string; model: string; color: string };
 export type Event = { id: number; kind: string; detail: string; time: string; tone: "success" | "danger" | "warning" | "info" };
 const initialSlots: Slot[] = [

@@ -1,0 +1,250 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  CarFront,
+  CircleParking,
+  Clock3,
+  Cpu,
+  Gauge,
+  IndianRupee,
+  Radio,
+  TrendingUp,
+} from "lucide-react";
+import { AppShell, SectionHeading } from "@/components/AppShell";
+import { ActivityList } from "@/components/ActivityList";
+import { ParkingMap, MapLegend } from "@/components/ParkingMap";
+import { Button } from "@/components/Button";
+import { useParking } from "@/lib/parking-context";
+import { pageMeta } from "@/lib/page-meta";
+
+export const Route = createFileRoute("/overview")({
+  head: () =>
+    pageMeta(
+      "Overview",
+      "Monitor parking availability, live activity and device health at SmartPark.",
+    ),
+  component: Overview,
+});
+
+function Overview() {
+  const { slots } = useParking();
+  const available = slots.filter(s => s.status === "available").length;
+  const occupied = slots.filter(s => s.status === "occupied").length;
+  const occupancy = slots.length ? Math.round((occupied / slots.length) * 100) : 0;
+
+  const metrics = [
+    {
+      label: "Total spaces",
+      value: slots.length.toString().padStart(2, "0"),
+      note: "Across this facility",
+      icon: CircleParking,
+      tone: "text-info bg-info-soft",
+    },
+    {
+      label: "Available now",
+      value: available.toString().padStart(2, "0"),
+      note: "Ready for parking",
+      icon: CircleParking,
+      tone: "text-success bg-success-soft",
+    },
+    {
+      label: "Occupied",
+      value: occupied.toString().padStart(2, "0"),
+      note: `${occupancy}% occupancy rate`,
+      icon: CarFront,
+      tone: "text-danger bg-danger-soft",
+    },
+    {
+      label: "Vehicles today",
+      value: "27",
+      note: "+12% from yesterday",
+      icon: TrendingUp,
+      tone: "text-warning bg-warning-soft",
+    },
+  ];
+
+  return (
+    <AppShell
+      title="Overview"
+      description="Here's what's happening at your parking facility today."
+    >
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-success/25 bg-success-soft px-4 py-3">
+        <div className="flex items-center gap-3">
+          <span className="size-2 shrink-0 rounded-full bg-success status-pulse" />
+          <span className="text-sm font-semibold text-accent-foreground">
+            Facility is operating normally
+          </span>
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            Live availability and sensor status
+          </span>
+        </div>
+        <span className="text-xs font-medium text-success">All systems online</span>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(metric => (
+          <div key={metric.label} className="panel subtle-shadow p-5">
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-xs font-semibold text-muted-foreground">
+                {metric.label}
+              </span>
+              <span
+                className={`flex size-9 shrink-0 items-center justify-center rounded-md ${metric.tone}`}
+              >
+                <metric.icon size={18} />
+              </span>
+            </div>
+            <div className="mt-4 font-display text-4xl font-bold leading-none tabular-nums">
+              {metric.value}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">{metric.note}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
+        <section className="panel p-5 sm:p-6">
+          <SectionHeading
+            title="Parking layout"
+            aside={
+              <Link
+                to="/parking"
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                View all slots <ArrowUpRight size={14} />
+              </Link>
+            }
+          />
+          <ParkingMap compact />
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+            <MapLegend />
+            <span className="text-xs text-muted-foreground">Updated just now</span>
+          </div>
+        </section>
+
+        <div className="space-y-6">
+          <section className="panel p-5 sm:p-6">
+            <SectionHeading
+              title="Occupancy"
+              aside={
+                <span className="rounded bg-success-soft px-2 py-1 text-xs font-semibold text-success">
+                  {occupancy}% full
+                </span>
+              }
+            />
+            <div className="flex items-end gap-1">
+              <strong className="font-display text-5xl leading-none tabular-nums">
+                {occupied}
+              </strong>
+              <span className="mb-1 text-xl text-muted-foreground">/ {slots.length}</span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">Spaces currently in use</p>
+            <div className="mt-6 h-2 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all"
+                style={{ width: `${occupancy}%` }}
+              />
+            </div>
+            <div className="mt-3 flex justify-between text-xs text-muted-foreground">
+              <span>{available} available</span>
+              <span>{occupied} occupied</span>
+            </div>
+          </section>
+
+          <section className="panel p-5 sm:p-6">
+            <SectionHeading
+              title="Hardware status"
+              aside={
+                <Link
+                  to="/devices"
+                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                >
+                  Details <ArrowRight size={13} />
+                </Link>
+              }
+            />
+            <div className="flex items-center gap-4 rounded-md bg-canvas p-4">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-info-soft text-info">
+                <Cpu size={22} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-bold">ESP32-PARK-001</div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Main controller &middot; last seen 2s ago
+                </p>
+              </div>
+              <span className="size-2 shrink-0 rounded-full bg-success status-pulse" />
+            </div>
+            <div className="mt-4 grid grid-cols-3 divide-x divide-border text-center">
+              <div className="px-1">
+                <Radio size={16} className="mx-auto mb-1 text-success" />
+                <span className="block text-[11px] text-muted-foreground">Sensors</span>
+                <div className="text-xs font-semibold">Online</div>
+              </div>
+              <div className="px-1">
+                <Gauge size={16} className="mx-auto mb-1 text-success" />
+                <span className="block text-[11px] text-muted-foreground">Gate</span>
+                <div className="text-xs font-semibold">Operational</div>
+              </div>
+              <div className="px-1">
+                <Clock3 size={16} className="mx-auto mb-1 text-info" />
+                <span className="block text-[11px] text-muted-foreground">Heartbeat</span>
+                <div className="text-xs font-semibold">2s ago</div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
+        <section className="panel p-5 sm:p-6">
+          <SectionHeading
+            title="Live activity"
+            aside={
+              <Link
+                to="/sessions"
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+              >
+                View activity <ArrowUpRight size={14} />
+              </Link>
+            }
+          />
+          <ActivityList limit={4} />
+        </section>
+
+        <section className="relative overflow-hidden rounded-md bg-ink p-6 text-primary-foreground">
+          <div className="relative z-10">
+            <span className="text-[10px] font-bold uppercase tracking-[.16em] text-primary">
+              Daily snapshot
+            </span>
+            <h3 className="mt-3 font-display text-2xl font-bold">On the move.</h3>
+            <p className="mt-2 max-w-xs text-sm leading-6 text-primary-foreground/55">
+              A quick look at how your facility is performing today.
+            </p>
+            <div className="mt-7 flex items-center justify-between border-t border-primary-foreground/15 pt-4">
+              <div>
+                <div className="flex items-center gap-1 text-xs text-primary-foreground/50">
+                  <IndianRupee size={12} /> Revenue today
+                </div>
+                <div className="mt-1 font-display text-2xl font-bold tabular-nums">
+                  &#8377;12,450
+                </div>
+              </div>
+              <Link to="/analytics" aria-label="View analytics">
+                <Button variant="primary" size="icon">
+                  <ArrowUpRight size={18} />
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <CircleParking
+            size={160}
+            strokeWidth={0.7}
+            className="absolute -right-10 top-0 text-primary-foreground/5"
+          />
+        </section>
+      </div>
+    </AppShell>
+  );
+}

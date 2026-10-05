@@ -1,11 +1,216 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { ArrowUpRight, CarFront, Clock3, IndianRupee, TrendingUp } from "lucide-react";
 import { AppShell, SectionHeading } from "@/components/AppShell";
 import { pageMeta } from "@/lib/page-meta";
-import { ArrowUpRight, CarFront, Clock3, IndianRupee, TrendingUp } from "lucide-react";
-export const Route = createFileRoute("/analytics")({ head: () => pageMeta("Analytics", "Explore occupancy, vehicle traffic and revenue at SmartPark."), component: AnalyticsPage });
-const occupancy = [{ hour: "06:00", value: 12 }, { hour: "08:00", value: 36 }, { hour: "10:00", value: 72 }, { hour: "12:00", value: 55 }, { hour: "14:00", value: 81 }, { hour: "16:00", value: 68 }, { hour: "18:00", value: 94 }, { hour: "20:00", value: 48 }, { hour: "22:00", value: 22 }];
-const week = [{ day: "Mon", vehicles: 21, revenue: 1740 }, { day: "Tue", vehicles: 32, revenue: 2280 }, { day: "Wed", vehicles: 28, revenue: 1960 }, { day: "Thu", vehicles: 39, revenue: 2860 }, { day: "Fri", vehicles: 34, revenue: 2490 }, { day: "Sat", vehicles: 47, revenue: 3420 }, { day: "Sun", vehicles: 27, revenue: 2450 }];
+
+export const Route = createFileRoute("/analytics")({
+  head: () => pageMeta("Analytics", "Explore occupancy, vehicle traffic and revenue at SmartPark."),
+  component: AnalyticsPage,
+});
+
+const occupancy = [
+  { hour: "06:00", value: 12 },
+  { hour: "08:00", value: 36 },
+  { hour: "10:00", value: 72 },
+  { hour: "12:00", value: 55 },
+  { hour: "14:00", value: 81 },
+  { hour: "16:00", value: 68 },
+  { hour: "18:00", value: 94 },
+  { hour: "20:00", value: 48 },
+  { hour: "22:00", value: 22 },
+];
+
+const week = [
+  { day: "Mon", vehicles: 21, revenue: 1740 },
+  { day: "Tue", vehicles: 32, revenue: 2280 },
+  { day: "Wed", vehicles: 28, revenue: 1960 },
+  { day: "Thu", vehicles: 39, revenue: 2860 },
+  { day: "Fri", vehicles: 34, revenue: 2490 },
+  { day: "Sat", vehicles: 47, revenue: 3420 },
+  { day: "Sun", vehicles: 27, revenue: 2450 },
+];
+
+const metrics = [
+  {
+    label: "Vehicles today",
+    value: "27",
+    icon: CarFront,
+    change: "+12% vs yesterday",
+    tone: "text-info bg-info-soft",
+  },
+  {
+    label: "Average duration",
+    value: "1h 42m",
+    icon: Clock3,
+    change: "Across all sessions",
+    tone: "text-warning bg-warning-soft",
+  },
+  {
+    label: "Revenue today",
+    value: "₹12,450",
+    icon: IndianRupee,
+    change: "+8% vs yesterday",
+    tone: "text-success bg-success-soft",
+  },
+  {
+    label: "Peak occupancy",
+    value: "92%",
+    icon: TrendingUp,
+    change: "At 6:00 PM",
+    tone: "text-danger bg-danger-soft",
+  },
+];
+
+const tooltipStyle = {
+  borderRadius: 6,
+  border: "1px solid var(--border)",
+  background: "var(--card)",
+  fontSize: 12,
+};
+
 function AnalyticsPage() {
-  return <AppShell title="Analytics" description="Understand how your parking facility is performing."><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[{ label: "Vehicles today", value: "27", icon: CarFront, change: "+12% vs yesterday", tone: "text-info bg-info-soft" }, { label: "Average duration", value: "1h 42m", icon: Clock3, change: "Across all sessions", tone: "text-warning bg-warning-soft" }, { label: "Revenue today", value: "₹2,450", icon: IndianRupee, change: "+8% vs yesterday", tone: "text-success bg-success-soft" }, { label: "Peak occupancy", value: "92%", icon: TrendingUp, change: "At 6:00 PM", tone: "text-danger bg-danger-soft" }].map(m => <div key={m.label} className="panel p-5"><div className="flex items-start justify-between"><span className="text-xs text-muted-foreground">{m.label}</span><span className={`flex size-9 items-center justify-center rounded-md ${m.tone}`}><m.icon size={18}/></span></div><div className="mt-4 font-display text-3xl font-bold">{m.value}</div><div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground"><ArrowUpRight size={13} className="text-success"/>{m.change}</div></div>)}</div><div className="mt-6 grid gap-6 xl:grid-cols-2"><section className="panel p-5 sm:p-6"><SectionHeading title="Occupancy throughout today" aside={<span className="text-xs text-muted-foreground">Today</span>}/><div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={occupancy} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}><defs><linearGradient id="occupancyFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25}/><stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/></linearGradient></defs><CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false}/><XAxis dataKey="hour" tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)"/><YAxis tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)" unit="%"/><Tooltip contentStyle={{ borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)" }}/><Area type="monotone" dataKey="value" name="Occupancy %" stroke="var(--primary)" strokeWidth={3} fill="url(#occupancyFill)"/></AreaChart></ResponsiveContainer></div></section><section className="panel p-5 sm:p-6"><SectionHeading title="Vehicles this week" aside={<span className="text-xs text-muted-foreground">Last 7 days</span>}/><div className="h-72 w-full"><ResponsiveContainer width="100%" height="100%"><BarChart data={week} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}><CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false}/><XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)"/><YAxis tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)"/><Tooltip contentStyle={{ borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)" }}/><Bar dataKey="vehicles" name="Vehicles" fill="var(--info)" radius={[3,3,0,0]} maxBarSize={36}/></BarChart></ResponsiveContainer></div></section></div><section className="panel mt-6 p-5 sm:p-6"><SectionHeading title="Weekly revenue" aside={<span className="text-xs text-muted-foreground">In INR</span>}/><div className="h-56 w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={week} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}><CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false}/><XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)"/><YAxis tickLine={false} axisLine={false} fontSize={11} stroke="var(--muted-foreground)"/><Tooltip contentStyle={{ borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)" }}/><Area type="monotone" dataKey="revenue" name="Revenue ₹" stroke="var(--info)" strokeWidth={3} fill="var(--info-soft)"/></AreaChart></ResponsiveContainer></div></section></AppShell>;
+  return (
+    <AppShell
+      title="Analytics"
+      description="Understand how your parking facility is performing."
+    >
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {metrics.map(metric => (
+          <div key={metric.label} className="panel subtle-shadow p-5">
+            <div className="flex items-start justify-between gap-3">
+              <span className="text-xs text-muted-foreground">{metric.label}</span>
+              <span
+                className={`flex size-9 shrink-0 items-center justify-center rounded-md ${metric.tone}`}
+              >
+                <metric.icon size={18} />
+              </span>
+            </div>
+            <div className="mt-4 font-display text-3xl font-bold tabular-nums">{metric.value}</div>
+            <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+              <ArrowUpRight size={13} className="text-success" />
+              {metric.change}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+        <section className="panel p-5 sm:p-6">
+          <SectionHeading
+            title="Occupancy throughout today"
+            aside={<span className="text-xs text-muted-foreground">Today</span>}
+          />
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={occupancy} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="occupancyFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="hour"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  stroke="var(--muted-foreground)"
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  stroke="var(--muted-foreground)"
+                  unit="%"
+                />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  name="Occupancy %"
+                  stroke="var(--primary)"
+                  strokeWidth={3}
+                  fill="url(#occupancyFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        <section className="panel p-5 sm:p-6">
+          <SectionHeading
+            title="Vehicles this week"
+            aside={<span className="text-xs text-muted-foreground">Last 7 days</span>}
+          />
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={week} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="day"
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  stroke="var(--muted-foreground)"
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  fontSize={11}
+                  stroke="var(--muted-foreground)"
+                />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--muted)" }} />
+                <Bar dataKey="vehicles" name="Vehicles" fill="var(--info)" radius={[4, 4, 0, 0]} maxBarSize={36} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      </div>
+
+      <section className="panel mt-6 p-5 sm:p-6">
+        <SectionHeading title="Weekly revenue" aside={<span className="text-xs text-muted-foreground">In INR</span>} />
+        <div className="h-56 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={week} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+              <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="day"
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                stroke="var(--muted-foreground)"
+              />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                fontSize={11}
+                stroke="var(--muted-foreground)"
+              />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Area
+                type="monotone"
+                dataKey="revenue"
+                name="Revenue ₹"
+                stroke="var(--info)"
+                strokeWidth={3}
+                fill="var(--info-soft)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+    </AppShell>
+  );
 }

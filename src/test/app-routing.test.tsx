@@ -14,4 +14,27 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("serves the landing page at / and keeps the dashboard at /overview", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    expect(router.matchRoutes("/").at(-1)?.routeId).toBe("/");
+    expect(router.matchRoutes("/overview").at(-1)?.routeId).toBe("/overview");
+  });
+
+  it("still matches every operator and driver section", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+
+    for (const path of [
+      "/parking",
+      "/sessions",
+      "/vehicles",
+      "/analytics",
+      "/devices",
+      "/settings",
+      "/driver",
+    ]) {
+      expect(router.matchRoutes(path).at(-1)?.routeId).toBe(path);
+    }
+  });
 });

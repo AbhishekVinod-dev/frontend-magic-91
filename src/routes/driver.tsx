@@ -1,24 +1,494 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Bell, CarFront, ChevronRight, CircleParking, Clock3, History, MapPin, Plus, UserRound, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bell,
+  CarFront,
+  ChevronRight,
+  CircleParking,
+  Clock3,
+  History,
+  MapPin,
+  Plus,
+  UserRound,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/Button";
 import { ParkingMap, MapLegend } from "@/components/ParkingMap";
 import { useParking } from "@/lib/parking-context";
 import { pageMeta } from "@/lib/page-meta";
-export const Route = createFileRoute("/driver")({ head: () => pageMeta("Driver view", "Find available parking, estimate fees and reserve a space with SmartPark."), component: DriverPage });
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/driver")({
+  head: () =>
+    pageMeta("Driver view", "Find available parking, estimate fees and reserve a space with SmartPark."),
+  component: DriverPage,
+});
+
+const tabs = ["Home", "Park", "History", "Profile"] as const;
+const tabIcons = {
+  Home: CircleParking,
+  Park: MapPin,
+  History,
+  Profile: UserRound,
+} as const;
+
+const durations = [1, 2, 3, 4, 5, 6, 8, 12, 24];
+
+const history = [
+  { date: "Today", plate: "TN 38 AB 1234", slot: "S03", time: "10:30 AM – 12:45 PM", fee: "₹30" },
+  { date: "September 30", plate: "TN 38 AB 1234", slot: "S01", time: "09:15 AM – 11:00 AM", fee: "₹20" },
+];
+
 function DriverPage() {
   const { slots, vehicles, reserveSlot, firstHour, extraHour, dailyMax } = useParking();
-  const [tab, setTab] = useState("Home"); const [selected, setSelected] = useState<string | undefined>(); const [booking, setBooking] = useState(false); const [confirmed, setConfirmed] = useState<string | undefined>();
-  const [vehicle, setVehicle] = useState(vehicles[0]?.plate || ""); const [arrival, setArrival] = useState("10:00"); const [duration, setDuration] = useState(2);
+  const [tab, setTab] = useState<(typeof tabs)[number]>("Home");
+  const [selected, setSelected] = useState<string | undefined>();
+  const [booking, setBooking] = useState(false);
+  const [confirmed, setConfirmed] = useState<string | undefined>();
+  const [vehicle, setVehicle] = useState(vehicles[0]?.plate || "");
+  const [arrival, setArrival] = useState("10:00");
+  const [duration, setDuration] = useState(2);
+
   const available = slots.filter(s => s.status === "available").length;
   const fee = Math.min(dailyMax, firstHour + Math.max(0, duration - 1) * extraHour);
-  function submit(e: FormEvent) { e.preventDefault(); if (!selected) return; reserveSlot(selected, vehicle, arrival); setConfirmed(selected); setBooking(false); setTab("Home"); }
-  return <div className="min-h-screen bg-canvas"><header className="sticky top-0 z-20 border-b border-border bg-card"><div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5"><Link to="/driver" className="flex items-center gap-2.5"><span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground"><CircleParking size={20}/></span><span className="font-display text-lg font-bold">smartpark<span className="text-primary">.</span></span></Link><div className="hidden items-center gap-1 md:flex">{["Home", "Park", "History", "Profile"].map(item => <Button key={item} variant={tab === item ? "secondary" : "ghost"} size="sm" onClick={() => setTab(item)}>{item}</Button>)}</div><div className="flex items-center gap-3"><span className="hidden items-center gap-2 rounded bg-success-soft px-2 py-1 text-xs font-semibold text-success sm:flex"><span className="size-1.5 rounded-full bg-success status-pulse"/> Live availability</span><Bell size={19} className="text-muted-foreground"/><span className="flex size-8 items-center justify-center rounded-full bg-ink text-[10px] font-bold text-primary-foreground">DR</span></div></div></header><main className="mx-auto max-w-6xl px-5 pb-28 pt-8 md:pb-12 md:pt-12"><div className="mb-8 flex items-center justify-between"><Link to="/" className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground"><ArrowLeft size={15}/> Operator dashboard</Link><span className="text-xs text-muted-foreground">SmartPark Main Facility</span></div>
-    {tab === "Home" && <><div className="grid items-stretch gap-6 lg:grid-cols-[1.05fr_.95fr]"><section className="relative flex min-h-[330px] flex-col justify-between overflow-hidden rounded-md bg-ink p-7 text-primary-foreground sm:p-9"><CircleParking size={310} strokeWidth={0.5} className="absolute -right-16 -top-12 text-primary-foreground/5"/><div className="relative"><span className="text-[11px] font-bold uppercase tracking-[.18em] text-primary">PARKING AVAILABILITY</span><h1 className="mt-5 max-w-sm font-display text-3xl font-bold leading-tight sm:text-4xl">Your space is waiting.</h1><p className="mt-2 text-sm text-primary-foreground/55">Find a spot and get on with your day.</p></div><div className="relative flex items-end justify-between gap-3"><div><div className="font-display text-7xl font-bold leading-none text-primary">{available}<span className="text-3xl text-primary-foreground/45"> / {slots.length}</span></div><div className="mt-2 text-xs font-bold uppercase tracking-[.16em] text-primary-foreground/70">Spaces available now</div></div><Button onClick={() => setTab("Park")} aria-label="Find parking" className="size-11 !p-0"><ArrowRight size={20}/></Button></div></section><section className="panel p-6 sm:p-7"><div className="mb-5 flex items-center justify-between"><h2 className="font-display text-lg font-bold">At a glance</h2><span className="flex items-center gap-2 text-xs text-success"><span className="size-1.5 rounded-full bg-success status-pulse"/> Updated now</span></div><div className="grid grid-cols-2 gap-3">{slots.slice(0, 4).map(slot => <div key={slot.id} className={`flex min-h-24 flex-col justify-between rounded-md border p-3 ${slot.status === "available" ? "border-success/30 bg-success-soft" : "border-danger/20 bg-danger-soft"}`}><span className="font-display text-sm font-bold">{slot.id}</span><span className={`flex items-center gap-1.5 text-xs font-semibold ${slot.status === "available" ? "text-success" : "text-danger"}`}><span className={`size-1.5 rounded-full ${slot.status === "available" ? "bg-success" : "bg-danger"}`}/>{slot.status === "available" ? "Available" : "Occupied"}</span></div>)}</div><Button onClick={() => setTab("Park")} variant="secondary" className="mt-5 w-full">Explore parking map <ArrowRight size={15}/></Button></section></div><div className="mt-6 grid gap-6 md:grid-cols-2"><section className="panel flex items-center gap-4 p-5"><span className="flex size-12 items-center justify-center rounded-md bg-info-soft text-info"><MapPin size={22}/></span><div className="flex-1"><div className="text-sm font-bold">SmartPark Main Facility</div><div className="mt-1 text-xs text-muted-foreground">1 location · {available} spaces open</div></div><ChevronRight size={18} className="text-muted-foreground"/></section><section className="panel flex items-center gap-4 p-5"><span className="flex size-12 items-center justify-center rounded-md bg-warning-soft text-warning"><Clock3 size={22}/></span><div className="flex-1"><div className="text-sm font-bold">Simple, flexible pricing</div><div className="mt-1 text-xs text-muted-foreground">From ₹{firstHour} for the first hour</div></div><ChevronRight size={18} className="text-muted-foreground"/></section></div>{confirmed && <div className="mt-6 rounded-md border border-success/30 bg-success-soft p-5"><div className="text-sm font-bold text-success">Slot {confirmed} reserved</div><p className="mt-1 text-xs text-muted-foreground">Your reservation is confirmed for {arrival}. This is a preview reservation only.</p></div>}</>}
-    {tab === "Park" && <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]"><section className="panel p-5 sm:p-7"><div className="mb-5 flex items-center justify-between"><div><h1 className="font-display text-2xl font-bold">Choose a space</h1><p className="mt-1 text-xs text-muted-foreground">Select any available slot on the map.</p></div><span className="rounded bg-success-soft px-3 py-1.5 text-xs font-bold text-success">{available} available</span></div><ParkingMap selected={selected} onSelect={setSelected}/><div className="mt-5"><MapLegend/></div></section><section className="panel h-fit p-6"><h2 className="font-display text-xl font-bold">Your parking</h2><p className="mt-1 text-xs text-muted-foreground">SmartPark Main Facility</p><div className="mt-6 rounded-md bg-canvas p-5"><span className="text-xs text-muted-foreground">Selected space</span><div className="mt-2 font-display text-4xl font-bold">{selected || "—"}</div><div className="mt-2 text-xs text-muted-foreground">{selected ? "Available for reservation" : "Choose a green space on the map"}</div></div><div className="mt-6 flex justify-between border-b border-border pb-4 text-sm"><span className="text-muted-foreground">First hour</span><strong>₹{firstHour}</strong></div><div className="flex justify-between border-b border-border py-4 text-sm"><span className="text-muted-foreground">Additional hour</span><strong>₹{extraHour}</strong></div><Button className="mt-6 w-full" disabled={!selected} onClick={() => setBooking(true)}>Reserve selected space <ArrowRight size={16}/></Button></section></div>}
-    {tab === "History" && <section className="panel p-6 sm:p-8"><div className="mb-7 flex items-center gap-3"><History size={22} className="text-primary"/><h1 className="font-display text-2xl font-bold">Parking history</h1></div><div className="divide-y divide-border">{[{ date: "Today", plate: "TN 38 AB 1234", slot: "S03", time: "10:30 AM – 12:45 PM", fee: "₹30" }, { date: "September 30", plate: "TN 38 AB 1234", slot: "S01", time: "09:15 AM – 11:00 AM", fee: "₹20" }].map(item => <div key={item.date} className="flex items-center gap-4 py-5"><span className="flex size-11 items-center justify-center rounded-md bg-info-soft text-info"><CarFront size={20}/></span><div className="flex-1"><div className="text-sm font-bold">{item.plate} <span className="font-normal text-muted-foreground">· {item.slot}</span></div><div className="mt-1 text-xs text-muted-foreground">{item.date} · {item.time}</div></div><strong className="text-sm">{item.fee}</strong></div>)}</div><p className="mt-4 text-xs text-muted-foreground">Sample parking history for the preview.</p></section>}
-    {tab === "Profile" && <div className="grid gap-6 md:grid-cols-2"><section className="panel p-6"><div className="mb-6 flex items-center gap-3"><UserRound size={21} className="text-primary"/><h1 className="font-display text-xl font-bold">Your profile</h1></div><div className="flex items-center gap-4 rounded bg-canvas p-4"><span className="flex size-12 items-center justify-center rounded-full bg-ink text-sm font-bold text-primary-foreground">DR</span><div><div className="text-sm font-bold">Demo Driver</div><div className="mt-1 text-xs text-muted-foreground">Driver account preview</div></div></div></section><section className="panel p-6"><div className="mb-6 flex items-center gap-3"><CarFront size={21} className="text-primary"/><h2 className="font-display text-xl font-bold">My vehicles</h2></div><div className="divide-y divide-border">{vehicles.map(v => <div key={v.plate} className="flex items-center gap-3 py-3"><span className="flex size-9 items-center justify-center rounded bg-info-soft text-info"><CarFront size={18}/></span><div><div className="text-sm font-semibold">{v.plate}</div><div className="text-xs text-muted-foreground">{v.model || v.type}</div></div></div>)}</div><Link to="/vehicles" className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"><Plus size={14}/> Manage vehicles</Link></section></div>}
-  </main><nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-card md:hidden">{[{ label: "Home", icon: CircleParking }, { label: "Park", icon: MapPin }, { label: "History", icon: History }, { label: "Profile", icon: UserRound }].map(item => <Button key={item.label} variant="ghost" onClick={() => { setTab(item.label); window.scrollTo(0,0); }} className={`flex h-16 flex-col gap-1 rounded-none text-[10px] ${tab === item.label ? "text-primary" : "text-muted-foreground"}`}><item.icon size={19}/>{item.label}</Button>)}</nav>
-  {booking && <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onMouseDown={e => { if (e.target === e.currentTarget) setBooking(false); }}><form onSubmit={submit} className="w-full max-w-md rounded-md bg-card p-6 shadow-xl"><div className="mb-5 flex items-center justify-between"><div><div className="text-xs font-semibold uppercase tracking-widest text-primary">RESERVATION</div><h2 className="mt-1 font-display text-2xl font-bold">Slot {selected}</h2></div><Button type="button" variant="ghost" size="icon" onClick={() => setBooking(false)} aria-label="Close"><X size={18}/></Button></div><div className="space-y-4"><label className="block text-xs font-semibold">Vehicle<select required value={vehicle} onChange={e => setVehicle(e.target.value)} className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal">{vehicles.map(v => <option key={v.plate} value={v.plate}>{v.plate} · {v.type}</option>)}</select></label><label className="block text-xs font-semibold">Arrival time<input type="time" required value={arrival} onChange={e => setArrival(e.target.value)} className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal"/></label><label className="block text-xs font-semibold">Expected duration<select value={duration} onChange={e => setDuration(Number(e.target.value))} className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal">{[1,2,3,4,5,6,8,12,24].map(n => <option key={n} value={n}>{n} {n === 1 ? "hour" : "hours"}</option>)}</select></label></div><div className="my-6 flex items-center justify-between rounded bg-success-soft p-4"><span className="text-xs font-semibold text-accent-foreground">Estimated fee</span><strong className="font-display text-xl text-success">₹{fee}</strong></div><Button type="submit" className="w-full" disabled={!vehicle}>Confirm reservation <ArrowRight size={16}/></Button><p className="mt-3 text-center text-[11px] text-muted-foreground">Reservation is for this preview only. No payment will be taken.</p></form></div>}
-  </div>;
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!selected) return;
+    reserveSlot(selected, vehicle, arrival);
+    setConfirmed(selected);
+    setBooking(false);
+    setTab("Home");
+  }
+
+  function go(next: (typeof tabs)[number]) {
+    setTab(next);
+    window.scrollTo({ top: 0 });
+  }
+
+  return (
+    <div className="min-h-screen bg-canvas">
+      <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-5">
+          <Link to="/driver" className="flex shrink-0 items-center gap-2.5">
+            <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              <CircleParking size={19} />
+            </span>
+            <span className="font-display text-lg font-bold tracking-tight">
+              smartpark<span className="text-primary">.</span>
+            </span>
+          </Link>
+
+          <div className="hidden items-center gap-1 md:flex">
+            {tabs.map(item => (
+              <Button
+                key={item}
+                variant={tab === item ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => go(item)}
+              >
+                {item}
+              </Button>
+            ))}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3">
+            <span className="hidden items-center gap-2 rounded bg-success-soft px-2 py-1 text-xs font-semibold text-success sm:flex">
+              <span className="size-1.5 rounded-full bg-success status-pulse" /> Live availability
+            </span>
+            <Bell size={19} className="text-muted-foreground" aria-hidden />
+            <span className="flex size-8 items-center justify-center rounded-full bg-ink text-[10px] font-bold text-primary-foreground">
+              DR
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-5 pb-28 pt-8 md:pb-12 md:pt-12">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+          <Link
+            to="/overview"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft size={15} /> Operator dashboard
+          </Link>
+          <span className="text-xs text-muted-foreground">SmartPark Main Facility</span>
+        </div>
+
+        {tab === "Home" && (
+          <>
+            <div className="grid items-stretch gap-6 lg:grid-cols-[1.05fr_.95fr]">
+              <section className="relative flex min-h-[330px] flex-col justify-between overflow-hidden rounded-md bg-ink p-7 text-primary-foreground sm:p-9">
+                <CircleParking
+                  size={310}
+                  strokeWidth={0.5}
+                  aria-hidden
+                  className="absolute -right-16 -top-12 text-primary-foreground/5"
+                />
+                <div className="relative">
+                  <span className="text-[11px] font-bold uppercase tracking-[.18em] text-primary">
+                    Parking availability
+                  </span>
+                  <h1 className="mt-5 max-w-sm font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
+                    Your space is waiting.
+                  </h1>
+                  <p className="mt-2 text-sm text-primary-foreground/55">
+                    Find a spot and get on with your day.
+                  </p>
+                </div>
+                <div className="relative flex items-end justify-between gap-3">
+                  <div>
+                    <div className="font-display text-7xl font-bold leading-none text-primary tabular-nums">
+                      {available}
+                      <span className="text-3xl text-primary-foreground/45">
+                        {" "}
+                        / {slots.length}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs font-bold uppercase tracking-[.16em] text-primary-foreground/70">
+                      Spaces available now
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => go("Park")}
+                    aria-label="Find parking"
+                    className="size-11 !p-0"
+                  >
+                    <ArrowRight size={20} />
+                  </Button>
+                </div>
+              </section>
+
+              <section className="panel p-6 sm:p-7">
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <h2 className="font-display text-lg font-bold tracking-tight">At a glance</h2>
+                  <span className="flex items-center gap-2 text-xs text-success">
+                    <span className="size-1.5 rounded-full bg-success status-pulse" /> Updated now
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  {slots.slice(0, 4).map(slot => {
+                    const free = slot.status === "available";
+                    return (
+                      <div
+                        key={slot.id}
+                        className={cn(
+                          "flex min-h-24 flex-col justify-between rounded-md border p-3 transition-transform hover:-translate-y-0.5",
+                          free ? "border-success/30 bg-success-soft" : "border-danger/20 bg-danger-soft",
+                        )}
+                      >
+                        <span className="font-display text-sm font-bold">{slot.id}</span>
+                        <span
+                          className={cn(
+                            "flex items-center gap-1.5 text-xs font-semibold",
+                            free ? "text-success" : "text-danger",
+                          )}
+                        >
+                          <span className={cn("size-1.5 rounded-full", free ? "bg-success" : "bg-danger")} />
+                          {free ? "Available" : "Occupied"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <Button onClick={() => go("Park")} variant="secondary" className="mt-5 w-full">
+                  Explore parking map <ArrowRight size={15} />
+                </Button>
+              </section>
+            </div>
+
+            <div className="mt-6 grid gap-6 md:grid-cols-2">
+              <section className="panel flex items-center gap-4 p-5 transition-colors hover:bg-canvas/60">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-info-soft text-info">
+                  <MapPin size={22} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-bold">SmartPark Main Facility</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    1 location &middot; {available} spaces open
+                  </div>
+                </div>
+                <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+              </section>
+
+              <section className="panel flex items-center gap-4 p-5 transition-colors hover:bg-canvas/60">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-md bg-warning-soft text-warning">
+                  <Clock3 size={22} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-bold">Simple, flexible pricing</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    From ₹{firstHour} for the first hour
+                  </div>
+                </div>
+                <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+              </section>
+            </div>
+
+            {confirmed && (
+              <div className="mt-6 rounded-md border border-success/30 bg-success-soft p-5">
+                <div className="text-sm font-bold text-success">Slot {confirmed} reserved</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Your reservation is confirmed for {arrival}. This is a preview reservation only.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {tab === "Park" && (
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
+            <section className="panel p-5 sm:p-7">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h1 className="font-display text-2xl font-bold tracking-tight">Choose a space</h1>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Select any available slot on the map.
+                  </p>
+                </div>
+                <span className="rounded bg-success-soft px-3 py-1.5 text-xs font-bold text-success">
+                  {available} available
+                </span>
+              </div>
+              <ParkingMap selected={selected} onSelect={setSelected} />
+              <div className="mt-5">
+                <MapLegend />
+              </div>
+            </section>
+
+            <section className="panel h-fit p-6">
+              <h2 className="font-display text-xl font-bold tracking-tight">Your parking</h2>
+              <p className="mt-1 text-xs text-muted-foreground">SmartPark Main Facility</p>
+
+              <div className="mt-6 rounded-md bg-canvas p-5">
+                <span className="text-xs text-muted-foreground">Selected space</span>
+                <div className="mt-2 font-display text-4xl font-bold tabular-nums">{selected || "—"}</div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {selected ? "Available for reservation" : "Choose a green space on the map"}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-between border-b border-border pb-4 text-sm">
+                <span className="text-muted-foreground">First hour</span>
+                <strong className="tabular-nums">₹{firstHour}</strong>
+              </div>
+              <div className="flex justify-between border-b border-border py-4 text-sm">
+                <span className="text-muted-foreground">Additional hour</span>
+                <strong className="tabular-nums">₹{extraHour}</strong>
+              </div>
+
+              <Button
+                className="mt-6 w-full"
+                disabled={!selected}
+                onClick={() => setBooking(true)}
+              >
+                Reserve selected space <ArrowRight size={16} />
+              </Button>
+            </section>
+          </div>
+        )}
+
+        {tab === "History" && (
+          <section className="panel p-6 sm:p-8">
+            <div className="mb-7 flex items-center gap-3">
+              <History size={22} className="text-primary" />
+              <h1 className="font-display text-2xl font-bold tracking-tight">Parking history</h1>
+            </div>
+            <div className="divide-y divide-border">
+              {history.map(item => (
+                <div key={item.date} className="flex items-center gap-4 py-5">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-info-soft text-info">
+                    <CarFront size={20} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-bold">
+                      {item.plate}{" "}
+                      <span className="font-normal text-muted-foreground">&middot; {item.slot}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {item.date} &middot; {item.time}
+                    </div>
+                  </div>
+                  <strong className="shrink-0 text-sm tabular-nums">{item.fee}</strong>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Sample parking history for the preview.
+            </p>
+          </section>
+        )}
+
+        {tab === "Profile" && (
+          <div className="grid gap-6 md:grid-cols-2">
+            <section className="panel p-6">
+              <div className="mb-6 flex items-center gap-3">
+                <UserRound size={21} className="text-primary" />
+                <h1 className="font-display text-xl font-bold tracking-tight">Your profile</h1>
+              </div>
+              <div className="flex items-center gap-4 rounded bg-canvas p-4">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-ink text-sm font-bold text-primary-foreground">
+                  DR
+                </span>
+                <div>
+                  <div className="text-sm font-bold">Demo Driver</div>
+                  <div className="mt-1 text-xs text-muted-foreground">Driver account preview</div>
+                </div>
+              </div>
+            </section>
+
+            <section className="panel p-6">
+              <div className="mb-6 flex items-center gap-3">
+                <CarFront size={21} className="text-primary" />
+                <h2 className="font-display text-xl font-bold tracking-tight">My vehicles</h2>
+              </div>
+
+              {vehicles.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  No saved vehicles yet.
+                </p>
+              ) : (
+                <div className="divide-y divide-border">
+                  {vehicles.map(item => (
+                    <div key={item.plate} className="flex items-center gap-3 py-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded bg-info-soft text-info">
+                        <CarFront size={18} />
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold">{item.plate}</div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {item.model || item.type}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <Link
+                to="/vehicles"
+                className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+              >
+                <Plus size={14} /> Manage vehicles
+              </Link>
+            </section>
+          </div>
+        )}
+      </main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-card md:hidden">
+        {tabs.map(item => {
+          const Icon = tabIcons[item];
+          return (
+            <Button
+              key={item}
+              variant="ghost"
+              onClick={() => go(item)}
+              className={cn(
+                "flex h-16 flex-col gap-1 rounded-none text-[10px]",
+                tab === item ? "text-primary" : "text-muted-foreground",
+              )}
+            >
+              <Icon size={19} />
+              {item}
+            </Button>
+          );
+        })}
+      </nav>
+
+      {booking && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) setBooking(false);
+          }}
+        >
+          <form
+            onSubmit={submit}
+            className="w-full max-w-md rounded-md border border-border bg-card p-6 shadow-2xl"
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-primary">
+                  Reservation
+                </div>
+                <h2 className="mt-1 font-display text-2xl font-bold tracking-tight">
+                  Slot {selected}
+                </h2>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setBooking(false)}
+                aria-label="Close"
+              >
+                <X size={18} />
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-xs font-semibold">
+                Vehicle
+                <select
+                  required
+                  value={vehicle}
+                  onChange={event => setVehicle(event.target.value)}
+                  className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal"
+                >
+                  {vehicles.map(item => (
+                    <option key={item.plate} value={item.plate}>
+                      {item.plate} &middot; {item.type}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block text-xs font-semibold">
+                Arrival time
+                <input
+                  type="time"
+                  required
+                  value={arrival}
+                  onChange={event => setArrival(event.target.value)}
+                  className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal"
+                />
+              </label>
+
+              <label className="block text-xs font-semibold">
+                Expected duration
+                <select
+                  value={duration}
+                  onChange={event => setDuration(Number(event.target.value))}
+                  className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal"
+                >
+                  {durations.map(n => (
+                    <option key={n} value={n}>
+                      {n} {n === 1 ? "hour" : "hours"}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="my-6 flex items-center justify-between rounded bg-success-soft p-4">
+              <span className="text-xs font-semibold text-accent-foreground">Estimated fee</span>
+              <strong className="font-display text-xl text-success tabular-nums">₹{fee}</strong>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={!vehicle}>
+              Confirm reservation <ArrowRight size={16} />
+            </Button>
+            <p className="mt-3 text-center text-[11px] text-muted-foreground">
+              Reservation is for this preview only. No payment will be taken.
+            </p>
+          </form>
+        </div>
+      )}
+    </div>
+  );
 }
