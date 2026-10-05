@@ -11,3 +11,4 @@
 
 - Keep SmartPark demo state in a shared React context across routes, because this frontend-only prototype has no connected parking hardware or backend.
 - Use separate TanStack route files for operator sections and the driver view, because each view needs a direct URL and its own metadata.
+- Keep assistant replies in the pure `respond()` engine and mount the panel once in the root route, because the chatbot has no model provider — answers must be derived from `ParkingProvider` state and stay testable without a server.

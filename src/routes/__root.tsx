@@ -12,6 +12,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { ParkingProvider } from "../lib/parking-context";
+import { ChatProvider } from "../lib/chat-context";
+import { ChatWidget } from "../components/ChatWidget";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
@@ -132,7 +134,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <ParkingProvider><Outlet /></ParkingProvider>
+      <ParkingProvider>
+        <ChatProvider>
+          <Outlet />
+          <ChatWidget />
+        </ChatProvider>
+      </ParkingProvider>
     </QueryClientProvider>
   );
 }

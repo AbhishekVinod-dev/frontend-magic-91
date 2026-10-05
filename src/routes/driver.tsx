@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/Button";
+import { ChatTrigger } from "@/components/ChatWidget";
 import { ParkingMap, MapLegend } from "@/components/ParkingMap";
 import { useParking } from "@/lib/parking-context";
 import { pageMeta } from "@/lib/page-meta";
@@ -22,7 +23,10 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/driver")({
   head: () =>
-    pageMeta("Driver view", "Find available parking, estimate fees and reserve a space with SmartPark."),
+    pageMeta(
+      "Driver view",
+      "Find available parking, estimate fees and reserve a space with SmartPark.",
+    ),
   component: DriverPage,
 });
 
@@ -38,11 +42,17 @@ const durations = [1, 2, 3, 4, 5, 6, 8, 12, 24];
 
 const history = [
   { date: "Today", plate: "TN 38 AB 1234", slot: "S03", time: "10:30 AM – 12:45 PM", fee: "₹30" },
-  { date: "September 30", plate: "TN 38 AB 1234", slot: "S01", time: "09:15 AM – 11:00 AM", fee: "₹20" },
+  {
+    date: "September 30",
+    plate: "TN 38 AB 1234",
+    slot: "S01",
+    time: "09:15 AM – 11:00 AM",
+    fee: "₹20",
+  },
 ];
 
 function DriverPage() {
-  const { slots, vehicles, reserveSlot, firstHour, extraHour, dailyMax } = useParking();
+  const { slots, vehicles, reserveSlot, firstHour, extraHour, dailyMax, liveFeed } = useParking();
   const [tab, setTab] = useState<(typeof tabs)[number]>("Home");
   const [selected, setSelected] = useState<string | undefined>();
   const [booking, setBooking] = useState(false);
@@ -51,7 +61,7 @@ function DriverPage() {
   const [arrival, setArrival] = useState("10:00");
   const [duration, setDuration] = useState(2);
 
-  const available = slots.filter(s => s.status === "available").length;
+  const available = slots.filter((s) => s.status === "available").length;
   const fee = Math.min(dailyMax, firstHour + Math.max(0, duration - 1) * extraHour);
 
   function submit(event: FormEvent) {
@@ -82,7 +92,7 @@ function DriverPage() {
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
-            {tabs.map(item => (
+            {tabs.map((item) => (
               <Button
                 key={item}
                 variant={tab === item ? "secondary" : "ghost"}
@@ -99,6 +109,7 @@ function DriverPage() {
               <span className="size-1.5 rounded-full bg-success status-pulse" /> Live availability
             </span>
             <Bell size={19} className="text-muted-foreground" aria-hidden />
+            <ChatTrigger />
             <span className="flex size-8 items-center justify-center rounded-full bg-ink text-[10px] font-bold text-primary-foreground">
               DR
             </span>
@@ -142,10 +153,7 @@ function DriverPage() {
                   <div>
                     <div className="font-display text-7xl font-bold leading-none text-primary tabular-nums">
                       {available}
-                      <span className="text-3xl text-primary-foreground/45">
-                        {" "}
-                        / {slots.length}
-                      </span>
+                      <span className="text-3xl text-primary-foreground/45"> / {slots.length}</span>
                     </div>
                     <div className="mt-2 text-xs font-bold uppercase tracking-[.16em] text-primary-foreground/70">
                       Spaces available now
@@ -164,20 +172,34 @@ function DriverPage() {
               <section className="panel p-6 sm:p-7">
                 <div className="mb-5 flex items-center justify-between gap-3">
                   <h2 className="font-display text-lg font-bold tracking-tight">At a glance</h2>
-                  <span className="flex items-center gap-2 text-xs text-success">
-                    <span className="size-1.5 rounded-full bg-success status-pulse" /> Updated now
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {liveFeed.receiving ? (
+                      <>
+                        <span
+                          className={cn(
+                            "size-1.5 rounded-full",
+                            liveFeed.stale ? "bg-warning" : "bg-success status-pulse",
+                          )}
+                        />
+                        Live &middot; updated {liveFeed.ageSeconds ?? 0}s ago
+                      </>
+                    ) : (
+                      <>Updated now</>
+                    )}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {slots.slice(0, 4).map(slot => {
+                  {slots.slice(0, 4).map((slot) => {
                     const free = slot.status === "available";
                     return (
                       <div
                         key={slot.id}
                         className={cn(
                           "flex min-h-24 flex-col justify-between rounded-md border p-3 transition-transform hover:-translate-y-0.5",
-                          free ? "border-success/30 bg-success-soft" : "border-danger/20 bg-danger-soft",
+                          free
+                            ? "border-success/30 bg-success-soft"
+                            : "border-danger/20 bg-danger-soft",
                         )}
                       >
                         <span className="font-display text-sm font-bold">{slot.id}</span>
@@ -187,7 +209,12 @@ function DriverPage() {
                             free ? "text-success" : "text-danger",
                           )}
                         >
-                          <span className={cn("size-1.5 rounded-full", free ? "bg-success" : "bg-danger")} />
+                          <span
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              free ? "bg-success" : "bg-danger",
+                            )}
+                          />
                           {free ? "Available" : "Occupied"}
                         </span>
                       </div>
@@ -266,7 +293,9 @@ function DriverPage() {
 
               <div className="mt-6 rounded-md bg-canvas p-5">
                 <span className="text-xs text-muted-foreground">Selected space</span>
-                <div className="mt-2 font-display text-4xl font-bold tabular-nums">{selected || "—"}</div>
+                <div className="mt-2 font-display text-4xl font-bold tabular-nums">
+                  {selected || "—"}
+                </div>
                 <div className="mt-2 text-xs text-muted-foreground">
                   {selected ? "Available for reservation" : "Choose a green space on the map"}
                 </div>
@@ -281,11 +310,7 @@ function DriverPage() {
                 <strong className="tabular-nums">₹{extraHour}</strong>
               </div>
 
-              <Button
-                className="mt-6 w-full"
-                disabled={!selected}
-                onClick={() => setBooking(true)}
-              >
+              <Button className="mt-6 w-full" disabled={!selected} onClick={() => setBooking(true)}>
                 Reserve selected space <ArrowRight size={16} />
               </Button>
             </section>
@@ -299,7 +324,7 @@ function DriverPage() {
               <h1 className="font-display text-2xl font-bold tracking-tight">Parking history</h1>
             </div>
             <div className="divide-y divide-border">
-              {history.map(item => (
+              {history.map((item) => (
                 <div key={item.date} className="flex items-center gap-4 py-5">
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-info-soft text-info">
                     <CarFront size={20} />
@@ -307,7 +332,9 @@ function DriverPage() {
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-bold">
                       {item.plate}{" "}
-                      <span className="font-normal text-muted-foreground">&middot; {item.slot}</span>
+                      <span className="font-normal text-muted-foreground">
+                        &middot; {item.slot}
+                      </span>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       {item.date} &middot; {item.time}
@@ -353,7 +380,7 @@ function DriverPage() {
                 </p>
               ) : (
                 <div className="divide-y divide-border">
-                  {vehicles.map(item => (
+                  {vehicles.map((item) => (
                     <div key={item.plate} className="flex items-center gap-3 py-3">
                       <span className="flex size-9 shrink-0 items-center justify-center rounded bg-info-soft text-info">
                         <CarFront size={18} />
@@ -381,7 +408,7 @@ function DriverPage() {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-4 border-t border-border bg-card md:hidden">
-        {tabs.map(item => {
+        {tabs.map((item) => {
           const Icon = tabIcons[item];
           return (
             <Button
@@ -403,7 +430,7 @@ function DriverPage() {
       {booking && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm"
-          onMouseDown={event => {
+          onMouseDown={(event) => {
             if (event.target === event.currentTarget) setBooking(false);
           }}
         >
@@ -437,10 +464,10 @@ function DriverPage() {
                 <select
                   required
                   value={vehicle}
-                  onChange={event => setVehicle(event.target.value)}
+                  onChange={(event) => setVehicle(event.target.value)}
                   className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal"
                 >
-                  {vehicles.map(item => (
+                  {vehicles.map((item) => (
                     <option key={item.plate} value={item.plate}>
                       {item.plate} &middot; {item.type}
                     </option>
@@ -454,7 +481,7 @@ function DriverPage() {
                   type="time"
                   required
                   value={arrival}
-                  onChange={event => setArrival(event.target.value)}
+                  onChange={(event) => setArrival(event.target.value)}
                   className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal"
                 />
               </label>
@@ -463,10 +490,10 @@ function DriverPage() {
                 Expected duration
                 <select
                   value={duration}
-                  onChange={event => setDuration(Number(event.target.value))}
+                  onChange={(event) => setDuration(Number(event.target.value))}
                   className="surface-input mt-2 h-10 w-full px-3 text-sm font-normal"
                 >
-                  {durations.map(n => (
+                  {durations.map((n) => (
                     <option key={n} value={n}>
                       {n} {n === 1 ? "hour" : "hours"}
                     </option>

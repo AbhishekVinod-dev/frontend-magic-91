@@ -1,4 +1,5 @@
 - [x] Review SmartPark PRD and choose frontend scope.
 - [x] Build responsive operator dashboard and supporting views.
 - [x] Build driver view with demo reservation and vehicles.
+- [x] Add SmartPark assistant across the landing, operator and driver views.
 - [ ] Verify navigation and key interactions in the preview.

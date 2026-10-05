@@ -14,6 +14,7 @@ import {
 import { AppShell, SectionHeading } from "@/components/AppShell";
 import { ActivityList } from "@/components/ActivityList";
 import { ParkingMap, MapLegend } from "@/components/ParkingMap";
+import { LiveDeviceFeed } from "@/components/LiveDeviceFeed";
 import { Button } from "@/components/Button";
 import { useParking } from "@/lib/parking-context";
 import { pageMeta } from "@/lib/page-meta";
@@ -28,10 +29,11 @@ export const Route = createFileRoute("/overview")({
 });
 
 function Overview() {
-  const { slots } = useParking();
-  const available = slots.filter(s => s.status === "available").length;
-  const occupied = slots.filter(s => s.status === "occupied").length;
+  const { slots, liveFeed } = useParking();
+  const available = slots.filter((s) => s.status === "available").length;
+  const occupied = slots.filter((s) => s.status === "occupied").length;
   const occupancy = slots.length ? Math.round((occupied / slots.length) * 100) : 0;
+  const liveBays = liveFeed.receiving ? liveFeed.slotIds : [];
 
   const metrics = [
     {
@@ -83,12 +85,10 @@ function Overview() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {metrics.map(metric => (
+        {metrics.map((metric) => (
           <div key={metric.label} className="panel subtle-shadow p-5">
             <div className="flex items-start justify-between gap-3">
-              <span className="text-xs font-semibold text-muted-foreground">
-                {metric.label}
-              </span>
+              <span className="text-xs font-semibold text-muted-foreground">{metric.label}</span>
               <span
                 className={`flex size-9 shrink-0 items-center justify-center rounded-md ${metric.tone}`}
               >
@@ -116,10 +116,18 @@ function Overview() {
               </Link>
             }
           />
-          <ParkingMap compact />
+          <ParkingMap
+            compact
+            liveSlotIds={liveBays}
+            gateOpen={liveFeed.receiving ? liveFeed.gateOpen : undefined}
+          />
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
             <MapLegend />
-            <span className="text-xs text-muted-foreground">Updated just now</span>
+            <span className="text-xs text-muted-foreground">
+              {liveFeed.receiving
+                ? `Live readings every 5s · last ${liveFeed.ageSeconds ?? 0}s ago`
+                : "Updated just now"}
+            </span>
           </div>
         </section>
 
@@ -169,32 +177,79 @@ function Overview() {
                 <Cpu size={22} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-bold">ESP32-PARK-001</div>
+                <div className="truncate text-sm font-bold">
+                  {liveFeed.deviceId ?? "ESP32-PARK-001"}
+                </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  Main controller &middot; last seen 2s ago
+                  {liveFeed.enabled
+                    ? liveFeed.receiving
+                      ? `Main controller · reading ${liveFeed.ageSeconds ?? 0}s ago`
+                      : "Main controller · waiting for first reading"
+                    : "Main controller · demo data"}
                 </p>
               </div>
-              <span className="size-2 shrink-0 rounded-full bg-success status-pulse" />
+              <span
+                className={
+                  liveFeed.receiving && !liveFeed.stale
+                    ? "size-2 shrink-0 rounded-full bg-success status-pulse"
+                    : "size-2 shrink-0 rounded-full bg-muted-foreground"
+                }
+              />
             </div>
             <div className="mt-4 grid grid-cols-3 divide-x divide-border text-center">
               <div className="px-1">
-                <Radio size={16} className="mx-auto mb-1 text-success" />
+                <Radio
+                  size={16}
+                  className={
+                    liveFeed.receiving
+                      ? "mx-auto mb-1 text-success"
+                      : "mx-auto mb-1 text-muted-foreground"
+                  }
+                />
                 <span className="block text-[11px] text-muted-foreground">Sensors</span>
-                <div className="text-xs font-semibold">Online</div>
+                <div className="text-xs font-semibold">
+                  {liveFeed.receiving ? `${liveFeed.slotIds.length} reporting` : "Waiting"}
+                </div>
               </div>
               <div className="px-1">
-                <Gauge size={16} className="mx-auto mb-1 text-success" />
+                <Gauge
+                  size={16}
+                  className={
+                    liveFeed.receiving
+                      ? "mx-auto mb-1 text-success"
+                      : "mx-auto mb-1 text-muted-foreground"
+                  }
+                />
                 <span className="block text-[11px] text-muted-foreground">Gate</span>
-                <div className="text-xs font-semibold">Operational</div>
+                <div className="text-xs font-semibold">
+                  {liveFeed.receiving ? (liveFeed.gateOpen ? "Open" : "Closed") : "Unknown"}
+                </div>
               </div>
               <div className="px-1">
-                <Clock3 size={16} className="mx-auto mb-1 text-info" />
+                <Clock3
+                  size={16}
+                  className={
+                    liveFeed.receiving && !liveFeed.stale
+                      ? "mx-auto mb-1 text-info"
+                      : "mx-auto mb-1 text-muted-foreground"
+                  }
+                />
                 <span className="block text-[11px] text-muted-foreground">Heartbeat</span>
-                <div className="text-xs font-semibold">2s ago</div>
+                <div className="text-xs font-semibold">
+                  {liveFeed.receiving
+                    ? liveFeed.ageSeconds === null
+                      ? "—"
+                      : `${liveFeed.ageSeconds}s ago`
+                    : "—"}
+                </div>
               </div>
             </div>
           </section>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <LiveDeviceFeed />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">

@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 .output
+
+# Local env files - never commit real Supabase keys
+.env
+.env.local
+.env.*.local
 .vinxi
 .tanstack/**
 .nitro

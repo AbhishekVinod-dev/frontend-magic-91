@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "./Button";
+import { ChatTrigger } from "./ChatWidget";
 import { cn } from "@/lib/utils";
 
 const nav = [
@@ -193,6 +194,7 @@ export function AppShell({
               <Bell size={18} />
               <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-danger" />
             </Link>
+            <ChatTrigger />
             <span className="ml-1 flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-primary-foreground">
               SP
             </span>
