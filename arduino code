@@ -1,11 +1,397 @@
+// #include <ESP32Servo.h>
+// #include <Wire.h>
+// #include <LiquidCrystal_I2C.h>
+
+// // ===============================
+// // PIN DEFINITIONS
+// // ===============================
+
+// // Entrance and Exit
+// #define ENTRANCE_IR 18
+// #define EXIT_IR 19
+
+// // Parking slot sensors
+// #define SLOT1_IR 26
+// #define SLOT2_IR 27
+
+// // Servo and LED
+// #define SERVO_PIN 13
+// #define RED_LED 25
+
+// // ===============================
+// // LCD
+// // ===============================
+
+// LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// // ===============================
+// // SERVO
+// // ===============================
+
+// Servo gateServo;
+
+// // ===============================
+// // PARKING VARIABLES
+// // ===============================
+
+// int totalSlots = 2;
+// int availableSlots = 2;
+
+// // Trigger protection
+// bool entranceTriggered = false;
+// bool exitTriggered = false;
+
+// // ===============================
+// // UPDATE PARKING DISPLAY
+// // ===============================
+
+// void updateDisplay()
+// {
+//   lcd.clear();
+
+//   // -------------------------------
+//   // Parking full
+//   // -------------------------------
+
+//   if (availableSlots == 0)
+//   {
+//     lcd.setCursor(0, 0);
+//     lcd.print("NO SLOTS");
+
+//     lcd.setCursor(0, 1);
+//     lcd.print("AVAILABLE");
+
+//     digitalWrite(RED_LED, HIGH);
+//   }
+
+//   // -------------------------------
+//   // Slots available
+//   // -------------------------------
+
+//   else
+//   {
+//     lcd.setCursor(0, 0);
+//     lcd.print("Available: ");
+//     lcd.print(availableSlots);
+
+//     lcd.setCursor(0, 1);
+
+//     lcd.print("S1:");
+
+//     if (digitalRead(SLOT1_IR) == LOW)
+//       lcd.print("X");
+//     else
+//       lcd.print("O");
+
+//     lcd.print(" S2:");
+
+//     if (digitalRead(SLOT2_IR) == LOW)
+//       lcd.print("X");
+//     else
+//       lcd.print("O");
+
+//     digitalWrite(RED_LED, LOW);
+//   }
+// }
+
+// // ===============================
+// // CHECK PARKING SLOTS
+// // ===============================
+
+// void checkParkingSlots()
+// {
+//   int slot1State = digitalRead(SLOT1_IR);
+//   int slot2State = digitalRead(SLOT2_IR);
+
+//   int occupiedSlots = 0;
+
+//   // LOW = vehicle detected
+
+//   if (slot1State == LOW)
+//   {
+//     occupiedSlots++;
+//   }
+
+//   if (slot2State == LOW)
+//   {
+//     occupiedSlots++;
+//   }
+
+//   availableSlots = totalSlots - occupiedSlots;
+
+//   // Safety
+//   if (availableSlots < 0)
+//   {
+//     availableSlots = 0;
+//   }
+
+//   if (availableSlots > totalSlots)
+//   {
+//     availableSlots = totalSlots;
+//   }
+// }
+
+// // ===============================
+// // OPEN GATE
+// // ===============================
+
+// void openGate()
+// {
+//   Serial.println("Opening Gate");
+
+//   gateServo.write(90);
+
+//   delay(3000);
+
+//   gateServo.write(0);
+
+//   Serial.println("Gate Closed");
+// }
+
+// // ===============================
+// // PRINT PARKING STATUS
+// // ===============================
+
+// void printParkingStatus()
+// {
+//   int slot1State = digitalRead(SLOT1_IR);
+//   int slot2State = digitalRead(SLOT2_IR);
+
+//   Serial.println("------------------------------");
+
+//   Serial.print("Slot 1: ");
+
+//   if (slot1State == LOW)
+//     Serial.println("OCCUPIED");
+//   else
+//     Serial.println("AVAILABLE");
+
+//   Serial.print("Slot 2: ");
+
+//   if (slot2State == LOW)
+//     Serial.println("OCCUPIED");
+//   else
+//     Serial.println("AVAILABLE");
+
+//   Serial.print("Available Slots: ");
+//   Serial.println(availableSlots);
+
+//   Serial.println("------------------------------");
+// }
+
+// // ===============================
+// // SETUP
+// // ===============================
+
+// void setup()
+// {
+//   Serial.begin(115200);
+
+//   // ===============================
+//   // IR SENSORS
+//   // ===============================
+
+//   pinMode(ENTRANCE_IR, INPUT);
+//   pinMode(EXIT_IR, INPUT);
+
+//   pinMode(SLOT1_IR, INPUT);
+//   pinMode(SLOT2_IR, INPUT);
+
+//   // ===============================
+//   // RED LED
+//   // ===============================
+
+//   pinMode(RED_LED, OUTPUT);
+
+//   digitalWrite(RED_LED, LOW);
+
+//   // ===============================
+//   // SERVO
+//   // ===============================
+
+//   gateServo.attach(SERVO_PIN);
+
+//   gateServo.write(0);
+
+//   // ===============================
+//   // I2C LCD
+//   // ===============================
+
+//   Wire.begin(21, 22);
+
+//   lcd.init();
+//   lcd.backlight();
+
+//   // ===============================
+//   // STARTUP MESSAGE
+//   // ===============================
+
+//   lcd.setCursor(0, 0);
+//   lcd.print("Smart Parking");
+
+//   lcd.setCursor(0, 1);
+//   lcd.print("Starting...");
+
+//   delay(2000);
+
+//   // ===============================
+//   // INITIAL PARKING STATUS
+//   // ===============================
+
+//   checkParkingSlots();
+
+//   updateDisplay();
+
+//   // ===============================
+//   // SERIAL OUTPUT
+//   // ===============================
+
+//   Serial.println("==============================");
+//   Serial.println("Smart Parking System Started");
+//   Serial.println("==============================");
+
+//   printParkingStatus();
+// }
+
+// // ===============================
+// // MAIN LOOP
+// // ===============================
+
+// void loop()
+// {
+//   // ===============================
+//   // READ ENTRANCE / EXIT
+//   // ===============================
+
+//   int entranceState = digitalRead(ENTRANCE_IR);
+//   int exitState = digitalRead(EXIT_IR);
+
+//   // ===============================
+//   // UPDATE SLOT STATUS
+//   // ===============================
+
+//   checkParkingSlots();
+
+//   // ===============================
+//   // SERIAL MONITOR
+//   // ===============================
+
+//   Serial.print("Entrance: ");
+//   Serial.print(entranceState);
+
+//   Serial.print(" | Exit: ");
+//   Serial.print(exitState);
+
+//   Serial.print(" | Available Slots: ");
+//   Serial.println(availableSlots);
+
+//   // ===============================
+//   // CAR ENTERING
+//   // ===============================
+
+//   if (entranceState == LOW && !entranceTriggered)
+//   {
+//     entranceTriggered = true;
+
+//     // Check whether parking is available
+//     if (availableSlots > 0)
+//     {
+//       Serial.println("Car detected at entrance");
+
+//       openGate();
+
+//       Serial.println("Gate opened for incoming car");
+//     }
+
+//     else
+//     {
+//       Serial.println("Parking Full");
+
+//       lcd.clear();
+
+//       lcd.setCursor(0, 0);
+//       lcd.print("NO SLOTS");
+
+//       lcd.setCursor(0, 1);
+//       lcd.print("AVAILABLE");
+
+//       digitalWrite(RED_LED, HIGH);
+
+//       delay(1500);
+
+//       updateDisplay();
+//     }
+//   }
+
+//   // Reset entrance trigger
+//   if (entranceState == HIGH)
+//   {
+//     entranceTriggered = false;
+//   }
+
+//   // ===============================
+//   // CAR EXITING
+//   // ===============================
+
+//   if (exitState == LOW && !exitTriggered)
+//   {
+//     exitTriggered = true;
+
+//     Serial.println("Car detected at exit");
+
+//     openGate();
+
+//     Serial.println("Gate opened for exiting car");
+//   }
+
+//   // Reset exit trigger
+//   if (exitState == HIGH)
+//   {
+//     exitTriggered = false;
+//   }
+
+//   // ===============================
+//   // UPDATE LCD
+//   // ===============================
+
+//   static int previousAvailableSlots = -1;
+
+//   if (availableSlots != previousAvailableSlots)
+//   {
+//     updateDisplay();
+
+//     previousAvailableSlots = availableSlots;
+
+//     printParkingStatus();
+//   }
+
+//   delay(100);
+// }
+
 #include <ESP32Servo.h>
+#include <HTTPClient.h>
 #include <LiquidCrystal_I2C.h>
+#include <WiFi.h>
 #include <Wire.h>
 
+// =====================================================
+// WIFI CONFIGURATION
+// =====================================================
 
-// ===============================
+const char *ssid = "Airtel_mvvi_6000";
+const char *password = "air18421";
+
+// =====================================================
+// SUPABASE CONFIGURATION
+// =====================================================
+
+const char *SUPABASE_URL = "https://xqsrxyblavpbuuobahjl.supabase.co";
+
+const char *SUPABASE_KEY = "sb_publishable_Pf28vt5hx22Y1ji6oTHfVQ_b7PJ95bi";
+
+// =====================================================
 // PIN DEFINITIONS
-// ===============================
+// =====================================================
 
 // Entrance and Exit
 #define ENTRANCE_IR 18
@@ -19,39 +405,42 @@
 #define SERVO_PIN 13
 #define RED_LED 25
 
-// ===============================
+// =====================================================
 // LCD
-// ===============================
+// =====================================================
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// ===============================
+// =====================================================
 // SERVO
-// ===============================
+// =====================================================
 
 Servo gateServo;
 
-// ===============================
+// =====================================================
 // PARKING VARIABLES
-// ===============================
+// =====================================================
 
 int totalSlots = 2;
 int availableSlots = 2;
 
-// Trigger protection
 bool entranceTriggered = false;
 bool exitTriggered = false;
 
-// ===============================
-// UPDATE PARKING DISPLAY
-// ===============================
+// =====================================================
+// SUPABASE TIMER
+// =====================================================
+
+unsigned long lastSupabaseUpdate = 0;
+
+const unsigned long SUPABASE_INTERVAL = 5000;
+
+// =====================================================
+// UPDATE LCD DISPLAY
+// =====================================================
 
 void updateDisplay() {
   lcd.clear();
-
-  // -------------------------------
-  // Parking full
-  // -------------------------------
 
   if (availableSlots == 0) {
     lcd.setCursor(0, 0);
@@ -61,13 +450,7 @@ void updateDisplay() {
     lcd.print("AVAILABLE");
 
     digitalWrite(RED_LED, HIGH);
-  }
-
-  // -------------------------------
-  // Slots available
-  // -------------------------------
-
-  else {
+  } else {
     lcd.setCursor(0, 0);
     lcd.print("Available: ");
     lcd.print(availableSlots);
@@ -92,9 +475,9 @@ void updateDisplay() {
   }
 }
 
-// ===============================
+// =====================================================
 // CHECK PARKING SLOTS
-// ===============================
+// =====================================================
 
 void checkParkingSlots() {
   int slot1State = digitalRead(SLOT1_IR);
@@ -114,7 +497,8 @@ void checkParkingSlots() {
 
   availableSlots = totalSlots - occupiedSlots;
 
-  // Safety
+  // Safety limits
+
   if (availableSlots < 0) {
     availableSlots = 0;
   }
@@ -124,9 +508,9 @@ void checkParkingSlots() {
   }
 }
 
-// ===============================
+// =====================================================
 // OPEN GATE
-// ===============================
+// =====================================================
 
 void openGate() {
   Serial.println("Opening Gate");
@@ -140,14 +524,15 @@ void openGate() {
   Serial.println("Gate Closed");
 }
 
-// ===============================
+// =====================================================
 // PRINT PARKING STATUS
-// ===============================
+// =====================================================
 
 void printParkingStatus() {
   int slot1State = digitalRead(SLOT1_IR);
   int slot2State = digitalRead(SLOT2_IR);
 
+  Serial.println();
   Serial.println("------------------------------");
 
   Serial.print("Slot 1: ");
@@ -170,16 +555,172 @@ void printParkingStatus() {
   Serial.println("------------------------------");
 }
 
-// ===============================
+// =====================================================
+// CONNECT TO WIFI
+// =====================================================
+
+void connectWiFi() {
+  Serial.println();
+  Serial.println("Connecting to WiFi...");
+
+  WiFi.begin(ssid, password);
+
+  int attempts = 0;
+
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+    delay(500);
+
+    Serial.print(".");
+
+    attempts++;
+  }
+
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("WiFi Connected!");
+
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+
+    lcd.clear();
+
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi Connected");
+
+    delay(1500);
+  } else {
+    Serial.println("WiFi Connection Failed");
+
+    lcd.clear();
+
+    lcd.setCursor(0, 0);
+    lcd.print("WiFi Failed");
+
+    delay(1500);
+  }
+}
+
+// =====================================================
+// SEND DATA TO SUPABASE
+// =====================================================
+
+void sendToSupabase() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi not connected.");
+
+    return;
+  }
+
+  // Read sensors
+
+  bool slot1Occupied = (digitalRead(SLOT1_IR) == LOW);
+
+  bool slot2Occupied = (digitalRead(SLOT2_IR) == LOW);
+
+  bool entranceDetected = (digitalRead(ENTRANCE_IR) == LOW);
+
+  bool exitDetected = (digitalRead(EXIT_IR) == LOW);
+
+  // Current gate state
+  // Since the servo returns to 0 after 3 seconds,
+  // we report the normal state as closed.
+
+  String gateStatus = "closed";
+
+  // ===================================================
+  // CREATE JSON
+  // ===================================================
+
+  String jsonData = "{";
+
+  jsonData += "\"device_id\":\"ESP32-PARK-001\",";
+
+  jsonData += "\"available_slots\":";
+  jsonData += String(availableSlots);
+  jsonData += ",";
+
+  jsonData += "\"total_slots\":";
+  jsonData += String(totalSlots);
+  jsonData += ",";
+
+  jsonData += "\"slot1_occupied\":";
+  jsonData += slot1Occupied ? "true" : "false";
+  jsonData += ",";
+
+  jsonData += "\"slot2_occupied\":";
+  jsonData += slot2Occupied ? "true" : "false";
+  jsonData += ",";
+
+  jsonData += "\"entrance_detected\":";
+  jsonData += entranceDetected ? "true" : "false";
+  jsonData += ",";
+
+  jsonData += "\"exit_detected\":";
+  jsonData += exitDetected ? "true" : "false";
+  jsonData += ",";
+
+  jsonData += "\"gate_status\":\"";
+  jsonData += gateStatus;
+  jsonData += "\"";
+
+  jsonData += "}";
+
+  // ===================================================
+  // SEND HTTP REQUEST
+  // ===================================================
+
+  HTTPClient http;
+
+  String endpoint = String(SUPABASE_URL) + "/rest/v1/parking_status";
+
+  http.begin(endpoint);
+
+  http.addHeader("Content-Type", "application/json");
+
+  http.addHeader("apikey", SUPABASE_KEY);
+
+  http.addHeader("Authorization", String("Bearer ") + SUPABASE_KEY);
+
+  http.addHeader("Prefer", "return=minimal");
+
+  // POST
+
+  int httpResponseCode = http.POST(jsonData);
+
+  // ===================================================
+  // RESPONSE
+  // ===================================================
+
+  Serial.println();
+  Serial.println("Supabase Upload");
+
+  Serial.print("HTTP Response: ");
+  Serial.println(httpResponseCode);
+
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+
+    Serial.println("Response:");
+    Serial.println(response);
+  } else {
+    Serial.print("HTTP Error: ");
+    Serial.println(httpResponseCode);
+  }
+
+  http.end();
+}
+
+// =====================================================
 // SETUP
-// ===============================
+// =====================================================
 
 void setup() {
   Serial.begin(115200);
 
-  // ===============================
+  // ===================================================
   // IR SENSORS
-  // ===============================
+  // ===================================================
 
   pinMode(ENTRANCE_IR, INPUT);
   pinMode(EXIT_IR, INPUT);
@@ -187,34 +728,35 @@ void setup() {
   pinMode(SLOT1_IR, INPUT);
   pinMode(SLOT2_IR, INPUT);
 
-  // ===============================
+  // ===================================================
   // RED LED
-  // ===============================
+  // ===================================================
 
   pinMode(RED_LED, OUTPUT);
 
   digitalWrite(RED_LED, LOW);
 
-  // ===============================
+  // ===================================================
   // SERVO
-  // ===============================
+  // ===================================================
 
   gateServo.attach(SERVO_PIN);
 
   gateServo.write(0);
 
-  // ===============================
-  // I2C LCD
-  // ===============================
+  // ===================================================
+  // LCD
+  // ===================================================
 
   Wire.begin(21, 22);
 
   lcd.init();
+
   lcd.backlight();
 
-  // ===============================
+  // ===================================================
   // STARTUP MESSAGE
-  // ===============================
+  // ===================================================
 
   lcd.setCursor(0, 0);
   lcd.print("Smart Parking");
@@ -224,46 +766,58 @@ void setup() {
 
   delay(2000);
 
-  // ===============================
+  // ===================================================
+  // WIFI
+  // ===================================================
+
+  connectWiFi();
+
+  // ===================================================
   // INITIAL PARKING STATUS
-  // ===============================
+  // ===================================================
 
   checkParkingSlots();
 
   updateDisplay();
 
-  // ===============================
-  // SERIAL OUTPUT
-  // ===============================
+  // ===================================================
+  // SERIAL
+  // ===================================================
 
+  Serial.println();
   Serial.println("==============================");
   Serial.println("Smart Parking System Started");
   Serial.println("==============================");
 
   printParkingStatus();
+
+  // Send initial data
+
+  sendToSupabase();
 }
 
-// ===============================
+// =====================================================
 // MAIN LOOP
-// ===============================
+// =====================================================
 
 void loop() {
-  // ===============================
+  // ===================================================
   // READ ENTRANCE / EXIT
-  // ===============================
+  // ===================================================
 
   int entranceState = digitalRead(ENTRANCE_IR);
+
   int exitState = digitalRead(EXIT_IR);
 
-  // ===============================
+  // ===================================================
   // UPDATE SLOT STATUS
-  // ===============================
+  // ===================================================
 
   checkParkingSlots();
 
-  // ===============================
+  // ===================================================
   // SERIAL MONITOR
-  // ===============================
+  // ===================================================
 
   Serial.print("Entrance: ");
   Serial.print(entranceState);
@@ -274,23 +828,20 @@ void loop() {
   Serial.print(" | Available Slots: ");
   Serial.println(availableSlots);
 
-  // ===============================
+  // ===================================================
   // CAR ENTERING
-  // ===============================
+  // ===================================================
 
   if (entranceState == LOW && !entranceTriggered) {
     entranceTriggered = true;
 
-    // Check whether parking is available
     if (availableSlots > 0) {
       Serial.println("Car detected at entrance");
 
       openGate();
 
       Serial.println("Gate opened for incoming car");
-    }
-
-    else {
+    } else {
       Serial.println("Parking Full");
 
       lcd.clear();
@@ -309,14 +860,17 @@ void loop() {
     }
   }
 
-  // Reset entrance trigger
+  // ===================================================
+  // RESET ENTRANCE TRIGGER
+  // ===================================================
+
   if (entranceState == HIGH) {
     entranceTriggered = false;
   }
 
-  // ===============================
+  // ===================================================
   // CAR EXITING
-  // ===============================
+  // ===================================================
 
   if (exitState == LOW && !exitTriggered) {
     exitTriggered = true;
@@ -328,14 +882,17 @@ void loop() {
     Serial.println("Gate opened for exiting car");
   }
 
-  // Reset exit trigger
+  // ===================================================
+  // RESET EXIT TRIGGER
+  // ===================================================
+
   if (exitState == HIGH) {
     exitTriggered = false;
   }
 
-  // ===============================
-  // UPDATE LCD
-  // ===============================
+  // ===================================================
+  // UPDATE LCD WHEN SLOT STATUS CHANGES
+  // ===================================================
 
   static int previousAvailableSlots = -1;
 
@@ -345,6 +902,16 @@ void loop() {
     previousAvailableSlots = availableSlots;
 
     printParkingStatus();
+  }
+
+  // ===================================================
+  // SEND TO SUPABASE EVERY 5 SECONDS
+  // ===================================================
+
+  if (millis() - lastSupabaseUpdate >= SUPABASE_INTERVAL) {
+    lastSupabaseUpdate = millis();
+
+    sendToSupabase();
   }
 
   delay(100);

@@ -1,811 +1,1718 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  Activity,
   ArrowRight,
+  ArrowUpRight,
   BarChart3,
   Bell,
   CarFront,
+  Check,
+  CheckCircle2,
+  ChevronDown,
+  CircleDot,
   CircleParking,
   Clock3,
   Cpu,
+  DoorOpen,
   Gauge,
+  HelpCircle,
   IndianRupee,
+  Layers,
   MapPin,
+  Maximize2,
+  Navigation,
+  QrCode,
   Radio,
+  RotateCcw,
   ShieldCheck,
+  Sliders,
+  Smartphone,
   Sparkles,
+  Star,
+  Timer,
+  TrendingUp,
+  Wifi,
   Zap,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useId } from "react";
 import { Button } from "@/components/Button";
 import { Wordmark } from "@/components/AppShell";
-import { useParking } from "@/lib/parking-context";
+import { useParking, type Slot } from "@/lib/parking-context";
 import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/")({
   head: () =>
     pageMeta(
-      "SmartPark — Smart parking management",
-      "SmartPark connects sensors, gates and drivers in one place. Live availability, reservations, analytics and hardware health for modern parking facilities.",
+      "SmartPark — Next-Gen IoT Parking Management",
+      "SmartPark connects ESP32 microcontrollers, ultrasonic sensors, automated barrier gates, and mobile driver reservations in real time. Zero hardware friction, zero revenue loss.",
     ),
   component: LandingPage,
 });
 
-const features = [
+/* -------------------------------------------------------------------------- */
+/* Static Data & Configurations                                               */
+/* -------------------------------------------------------------------------- */
+
+const coreFeatures = [
   {
     icon: Radio,
-    title: "Live slot availability",
-    body: "Every space reports its state in real time, so drivers see exactly where they can park before they arrive.",
+    badge: "50ms Telemetry",
+    title: "Real-Time Sensor Grid",
+    description:
+      "Per-bay ultrasonic and IR sensors update millisecond occupancy states across all floors. Drivers see exact open spaces before turning the corner.",
+    tag: "Ultrasonic + IR",
   },
   {
     icon: Zap,
-    title: "Automatic entry and exit",
-    body: "Number-plate recognition opens the gate in under a second and logs the session without any staff involvement.",
+    badge: "Autonomous",
+    title: "Intelligent Barrier Automation",
+    description:
+      "High-precision servo barrier gates open automatically on vehicle detection. Digital ticket timestamps sync directly with cloud billing ledgers.",
+    tag: "PWM Servo Control",
   },
   {
     icon: Bell,
-    title: "Reservations that hold",
-    body: "Reserved bays are protected from walk-ins, with arrival reminders sent before the driver pulls in.",
+    badge: "Anti-Conflict",
+    title: "Guaranteed Spot Reservations",
+    description:
+      "Pre-booked bays lock out unauthorized parking with live LED indicators and countdown grace periods. Completely eliminates parking disputes.",
+    tag: "Mobile Pass",
   },
   {
     icon: BarChart3,
-    title: "Revenue and traffic analytics",
-    body: "Understand peak hours, dwell time and revenue trends to plan pricing and staffing with confidence.",
+    badge: "Yield Optimization",
+    title: "Revenue & Dwell Analytics",
+    description:
+      "Visualize peak occupancy hours, turnover velocity, uncollected revenue leaks, and surge pricing opportunities to maximize lot yield.",
+    tag: "Dynamic Pricing",
   },
   {
     icon: Cpu,
-    title: "Hardware health at a glance",
-    body: "Controller, gate servo and every sensor report heartbeat status, so faults surface before drivers notice.",
+    badge: "Edge Reliability",
+    title: "Hardware Health & Self-Healing",
+    description:
+      "Continuous heartbeat monitoring for ESP32 nodes, gate drivers, and sensor pins. Instant automated alerts before hardware degrades driver flow.",
+    tag: "MQTT / Realtime",
   },
   {
-    icon: ShieldCheck,
-    title: "Operator and driver views",
-    body: "A control centre for facility teams and a focused, mobile-first app for drivers — one system, two experiences.",
+    icon: Smartphone,
+    badge: "Zero-Install PWA",
+    title: "Frictionless Driver Experience",
+    description:
+      "Mobile web application with instant upfront pricing, turn-by-turn facility navigation, and one-tap UPI/FASTag integration. No app store download needed.",
+    tag: "Instant Web Access",
   },
 ];
 
-const steps = [
+const hardwareSteps = [
   {
-    step: "01",
-    title: "Deploy the hardware",
-    body: "Install the ESP32 controller, wire the servo gate and mount per-slot sensors. Setup takes under an hour.",
+    number: "01",
+    title: "Per-Bay Sensor Nodes",
+    subtitle: "Ultrasonic & IR Detection",
+    description:
+      "Durable optical and distance sensors mounted above or inside each parking bay continuously measure vehicle presence with sub-centimeter accuracy.",
+    icon: Radio,
+    statusText: "50ms polling cycle",
   },
   {
-    step: "02",
-    title: "Connect the facility",
-    body: "Add your bays, pricing and opening hours. SmartPark builds the live map and driver booking flow for you.",
+    number: "02",
+    title: "ESP32 Edge Microcontroller",
+    subtitle: "Local Logic & Offline Fallback",
+    description:
+      "Processes sensor inputs locally at the facility gate, drives PWM servo motors, and transmits telemetry packets securely over WiFi and WebSockets.",
+    icon: Cpu,
+    statusText: "Autonomous edge failover",
   },
   {
-    step: "03",
-    title: "Run the facility",
-    body: "Monitor occupancy, sessions and revenue from the control centre while drivers reserve and pay from their phones.",
+    number: "03",
+    title: "Realtime Cloud Sync",
+    subtitle: "Supabase & WebSocket Mesh",
+    description:
+      "State transitions broadcast instantly to operator control desks and mobile driver screens without manual refresh or server polling overhead.",
+    icon: Wifi,
+    statusText: "< 80ms cloud latency",
+  },
+  {
+    number: "04",
+    title: "Autonomous Driver Flow",
+    subtitle: "Gate Clearance & Billing",
+    description:
+      "Drivers approach, barrier gate raises smoothly, bay status shifts to Occupied, and automated session timestamps begin for seamless payment.",
+    icon: Gauge,
+    statusText: "100% automated check-in",
   },
 ];
 
 const testimonials = [
   {
     quote:
-      "Occupancy used to be a guess. Now the team sees every bay live and peak-hour pricing finally makes sense.",
+      "We eliminated parking queues completely during Friday evening rushes. Our turnover increased by 38% and unauthorized parking dropped to zero.",
     name: "Priya Raman",
-    role: "Facility Manager, Koramangala",
+    role: "Director of Facilities",
+    facility: "Phoenix Tech Park, Bengaluru",
+    stats: "+38% Turnover",
+    rating: 5,
   },
   {
     quote:
-      "Drivers stopped circling for spaces. Reservation to gate entry takes about forty seconds now.",
+      "The hardware reliability is astonishing. The ESP32 telemetry caught a sensor wire looseness before morning shift started. Saved us hours of chaos.",
     name: "Arun Kumar",
-    role: "Operations Lead, Anna Nagar",
+    role: "Operations Head",
+    facility: "Grand Galleria Mall, Chennai",
+    stats: "99.98% Uptime",
+    rating: 5,
   },
   {
     quote:
-      "The hardware dashboard caught a failing sensor on a Tuesday. That alone paid for the system.",
+      "Drivers love opening the web link and reserving their bay in 5 seconds. We don't need manual ticket attendants at the basement gate anymore.",
     name: "Meera Nair",
-    role: "Head of Assets, T Nagar",
+    role: "Property Manager",
+    facility: "Cyber Towers Business Hub, Hyderabad",
+    stats: "₹1.4L Saved/Month",
+    rating: 5,
   },
 ];
 
-function Stat({
-  icon: Icon,
-  value,
-  label,
-  tone,
-}: {
-  icon: typeof CircleParking;
-  value: string;
-  label: string;
-  tone: string;
-}) {
-  return (
-    <div className="panel subtle-shadow flex items-center gap-4 p-5">
-      <span className={`flex size-11 shrink-0 items-center justify-center rounded-md ${tone}`}>
-        <Icon size={20} />
-      </span>
-      <div className="min-w-0">
-        <div className="font-display text-2xl font-bold leading-none tabular-nums">{value}</div>
-        <div className="mt-1.5 text-xs text-muted-foreground">{label}</div>
-      </div>
-    </div>
-  );
-}
+const faqs = [
+  {
+    q: "What happens if the parking lot loses internet connectivity?",
+    a: "The ESP32 controller operates autonomously at the local hardware level. The servo gate continues detecting vehicles and maintaining local bay state in firmware memory. Once the network reconnects, all buffered timestamps automatically synchronize with the cloud database.",
+  },
+  {
+    q: "Do drivers need to download an application from the App Store or Play Store?",
+    a: "No! SmartPark provides a lightning-fast Progressive Web App (PWA). Drivers can scan a QR code at your entrance or visit your custom facility link to check live spaces, reserve a spot, and pay fees instantly on any smartphone browser.",
+  },
+  {
+    q: "How long does physical hardware installation take?",
+    a: "A standard 8 to 20-bay floor typically takes under 2 hours to wire and test. The ESP32 controller connects to standard 5V power and per-slot IR/ultrasonic sensor cables with simple screw terminals.",
+  },
+  {
+    q: "Can we configure dynamic pricing and free grace periods?",
+    a: "Yes. Operators have total control over first-hour rates, subsequent hour increments, daily caps, and grace periods (e.g., 15 minutes free for quick drop-offs). Rates can be updated live from the Settings page.",
+  },
+  {
+    q: "Can SmartPark integrate with existing boom barriers or RFID gates?",
+    a: "Yes. While SmartPark supports direct PWM servo gates natively, the ESP32 GPIO relay output can trigger standard dry-contact commercial barrier gates and industrial loop detectors.",
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/* Main Component                                                             */
+/* -------------------------------------------------------------------------- */
 
 function LandingPage() {
-  const { slots, firstHour } = useParking();
-  const available = slots.filter(s => s.status === "available").length;
+  const { slots, updateSlot, firstHour, extraHour, dailyMax } = useParking();
+
+  // Interactive Hero Simulator States
+  const [selectedSlotId, setSelectedSlotId] = useState<string>("S01");
+  const [simulatedGate, setSimulatedGate] = useState<"CLOSED" | "OPENING" | "OPEN">("CLOSED");
+  const [lastActivityMessage, setLastActivityMessage] = useState<string>(
+    "ESP32 Telemetry online · 8 bays reporting active",
+  );
+
+  // ROI Calculator States
+  const [calcBays, setCalcBays] = useState<number>(30);
+  const [calcTurnover, setCalcTurnover] = useState<number>(4);
+  const [calcRate, setCalcRate] = useState<number>(30);
+
+  // Pricing Billing Toggle
+  const [annualBilling, setAnnualBilling] = useState<boolean>(true);
+
+  // Showcase Active Tab
+  const [showcaseTab, setShowcaseTab] = useState<"operator" | "driver">("operator");
+
+  // FAQ Accordion State
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
+
+  // Newsletter State
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+
+  // Derived metrics from live context
+  const availableCount = slots.filter((s) => s.status === "available").length;
+  const occupiedCount = slots.filter((s) => s.status === "occupied").length;
+  const reservedCount = slots.filter((s) => s.status === "reserved").length;
+  const occupancyPercentage = Math.round((occupiedCount / slots.length) * 100);
+
+  // Current selected slot object
+  const currentSlot = slots.find((s) => s.id === selectedSlotId) || slots[0];
+
+  // Simulator actions
+  const triggerGateEntry = () => {
+    if (simulatedGate !== "CLOSED") return;
+    setSimulatedGate("OPENING");
+    setLastActivityMessage("Proximity sensor triggered · Vehicle detected at Entrance Gate");
+
+    setTimeout(() => {
+      setSimulatedGate("OPEN");
+      setLastActivityMessage("Servo Gate OPEN (90°) · Vehicle TN 38 AB 1234 entering bay");
+
+      // Auto assign first available bay if any
+      const freeSlot = slots.find((s) => s.status === "available");
+      if (freeSlot) {
+        updateSlot(freeSlot.id, "occupied");
+        setSelectedSlotId(freeSlot.id);
+      }
+
+      setTimeout(() => {
+        setSimulatedGate("CLOSED");
+        setLastActivityMessage("Vehicle cleared entry beam · Servo Gate CLOSED (0°)");
+      }, 3200);
+    }, 1000);
+  };
+
+  const handleToggleSlotStatus = (slotId: string) => {
+    const target = slots.find((s) => s.id === slotId);
+    if (!target) return;
+
+    if (target.status === "available") {
+      updateSlot(slotId, "occupied");
+      setLastActivityMessage(`Bay ${slotId} sensor beam broken · State -> OCCUPIED`);
+    } else if (target.status === "occupied") {
+      updateSlot(slotId, "available");
+      setLastActivityMessage(`Bay ${slotId} vehicle departed · State -> AVAILABLE`);
+    } else if (target.status === "reserved") {
+      updateSlot(slotId, "occupied");
+      setLastActivityMessage(`Reserved driver parked in Bay ${slotId} · State -> OCCUPIED`);
+    } else {
+      updateSlot(slotId, "available");
+      setLastActivityMessage(`Maintenance completed on Bay ${slotId} · State -> AVAILABLE`);
+    }
+  };
+
+  // ROI Computations
+  const dailyCars = calcBays * calcTurnover;
+  const dailyGross = dailyCars * (calcRate * 2.5); // avg 2.5 hours dwell
+  const monthlyGross = Math.round(dailyGross * 30);
+  const leakagePrevented = Math.round(monthlyGross * 0.16); // ~16% revenue leakage prevention
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Site header */}
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 lg:px-8">
-          <Link to="/" aria-label="SmartPark home">
+    <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/20 selection:text-primary">
+      {/* Subtle Background Circuit & Radial Glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 bg-grid-pattern opacity-60"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed -top-40 left-1/2 -z-10 h-[640px] w-[1000px] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,oklch(0.63_0.14_165/18%),transparent_65%)] blur-3xl"
+      />
+
+      {/* -------------------------------------------------------------------- */}
+      {/* Sticky Frosted Header                                               */}
+      {/* -------------------------------------------------------------------- */}
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl transition-all">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link to="/" aria-label="SmartPark Home" className="flex items-center gap-3">
             <Wordmark />
+            <span className="hidden items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary lg:inline-flex">
+              <span className="size-1.5 rounded-full bg-primary status-pulse" />
+              v2.4 IoT Live
+            </span>
           </Link>
-          <nav className="hidden items-center gap-7 text-sm font-medium text-muted-foreground md:flex">
+
+          <nav
+            aria-label="Main Navigation"
+            className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex"
+          >
+            <a href="#simulator" className="transition-colors hover:text-foreground">
+              Live Simulator
+            </a>
+            <a href="#architecture" className="transition-colors hover:text-foreground">
+              IoT Architecture
+            </a>
+            <a href="#showcase" className="transition-colors hover:text-foreground">
+              Dual Experience
+            </a>
             <a href="#features" className="transition-colors hover:text-foreground">
               Features
             </a>
-            <a href="#how" className="transition-colors hover:text-foreground">
-              How it works
+            <a href="#calculator" className="transition-colors hover:text-foreground">
+              ROI Calculator
             </a>
             <a href="#pricing" className="transition-colors hover:text-foreground">
               Pricing
             </a>
           </nav>
-          <div className="flex items-center gap-2">
-            <Link to="/driver" className="hidden sm:block">
-              <Button variant="ghost" size="sm">
-                Driver app
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Live slot counter pill */}
+            <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold sm:flex">
+              <span className="size-2 rounded-full bg-success status-pulse" />
+              <span className="text-muted-foreground">Available:</span>
+              <span className="font-display font-bold text-foreground">
+                {availableCount}/{slots.length}
+              </span>
+            </div>
+
+            <Link to="/driver">
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Smartphone size={15} />
+                Driver App
               </Button>
             </Link>
+
             <Link to="/overview">
-              <Button size="sm">
-                Operator dashboard <ArrowRight size={15} />
+              <Button size="sm" className="shadow-md shadow-primary/20">
+                Operator Console
+                <ArrowRight size={15} />
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(120%_100%_at_50%_0%,var(--accent)_0%,transparent_65%)] opacity-70"
-        />
-        <div className="relative mx-auto max-w-7xl px-5 pb-16 pt-16 lg:px-8 lg:pb-24 lg:pt-24">
-          <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_.95fr] lg:gap-16">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-card px-3 py-1.5 text-xs font-semibold text-primary subtle-shadow">
-                <Sparkles size={14} />
-                ESP32 sensor network &middot; no cloud dependency
-              </span>
-
-              <h1 className="mt-6 font-display text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-                Every parking space,
-                <br />
-                <span className="text-primary">known in real time.</span>
-              </h1>
-
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-                SmartPark connects your sensors, gate and drivers in one platform. Live
-                availability for drivers, occupancy and revenue insight for operators, and
-                hardware health you can actually trust.
-              </p>
-
-              <div className="mt-9 flex flex-wrap items-center gap-3">
-                <Link to="/driver">
-                  <Button className="h-12 px-6 text-[15px]">
-                    Find a parking space <ArrowRight size={17} />
-                  </Button>
-                </Link>
-                <Link to="/overview">
-                  <Button variant="secondary" className="h-12 px-6 text-[15px]">
-                    Explore the control centre
-                  </Button>
-                </Link>
-              </div>
-
-              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
-                <span className="flex items-center gap-2">
-                  <ShieldCheck size={15} className="text-success" />
-                  Works offline, syncs when online
-                </span>
-                <span className="flex items-center gap-2">
-                  <Clock3 size={15} className="text-success" />
-                  Setup in under an hour
-                </span>
-              </div>
-            </div>
-
-            {/* Hero visual */}
-            <div className="relative">
-              <div className="panel subtle-shadow overflow-hidden">
-                <div className="flex items-center justify-between border-b border-border bg-canvas px-5 py-4">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                      <CircleParking size={18} />
-                    </span>
-                    <div>
-                      <div className="text-sm font-bold leading-tight">SmartPark Main Facility</div>
-                      <div className="text-[11px] text-muted-foreground">Level 01 &middot; 8 bays</div>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-2 rounded bg-success-soft px-2.5 py-1.5 text-[11px] font-bold text-success">
-                    <span className="size-1.5 rounded-full bg-success status-pulse" />
-                    LIVE
-                  </span>
+      <main>
+        {/* ------------------------------------------------------------------ */}
+        {/* HERO SECTION                                                       */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="relative pt-12 pb-16 lg:pt-20 lg:pb-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-12 lg:grid-cols-12 lg:gap-8">
+              {/* Hero Copy */}
+              <div className="lg:col-span-6 xl:col-span-6">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-semibold text-primary">
+                  <Sparkles size={14} className="animate-spin text-primary" style={{ animationDuration: "6s" }} />
+                  <span>Next-Generation Automated Parking OS</span>
                 </div>
 
-                <div className="p-5">
-                  <div className="mb-4 flex items-end justify-between">
-                    <div>
-                      <div className="text-xs font-semibold text-muted-foreground">
-                        Spaces available
+                <h1 className="mt-6 font-display text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl lg:leading-[1.12]">
+                  Autonomous Parking,{" "}
+                  <span className="bg-gradient-to-r from-primary via-emerald-500 to-teal-400 bg-clip-text text-transparent">
+                    Powered by Real-Time IoT Telemetry.
+                  </span>
+                </h1>
+
+                <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                  Bridge the physical and digital divide. SmartPark connects ESP32 microcontrollers,
+                  per-bay ultrasonic sensors, automated barrier gates, and smartphone reservations
+                  into a unified sub-second command center.
+                </p>
+
+                {/* Primary Action Group */}
+                <div className="mt-8 flex flex-wrap items-center gap-3 sm:gap-4">
+                  <Link to="/overview">
+                    <Button className="h-12 px-7 text-sm font-bold shadow-lg shadow-primary/25">
+                      Launch Operator Suite
+                      <ArrowRight size={17} />
+                    </Button>
+                  </Link>
+                  <Link to="/driver">
+                    <Button
+                      variant="secondary"
+                      className="h-12 border border-border px-6 text-sm font-semibold"
+                    >
+                      <Smartphone size={16} />
+                      Test Driver Booking
+                    </Button>
+                  </Link>
+                </div>
+
+                {/* Micro Assurance Metrics */}
+                <div className="mt-10 grid grid-cols-3 gap-3 border-t border-border/70 pt-6">
+                  <div>
+                    <div className="font-display text-xl font-bold text-foreground sm:text-2xl">
+                      &lt; 0.9s
+                    </div>
+                    <div className="text-xs text-muted-foreground">Servo Gate Speed</div>
+                  </div>
+                  <div>
+                    <div className="font-display text-xl font-bold text-foreground sm:text-2xl">
+                      99.98%
+                    </div>
+                    <div className="text-xs text-muted-foreground">ESP32 Uptime</div>
+                  </div>
+                  <div>
+                    <div className="font-display text-xl font-bold text-foreground sm:text-2xl">
+                      Zero
+                    </div>
+                    <div className="text-xs text-muted-foreground">App Install Req.</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Hero Right: Interactive Live Facility Radar & Simulator */}
+              <div className="lg:col-span-6 xl:col-span-6" id="simulator">
+                <div className="relative rounded-2xl border border-border/80 bg-card/90 p-5 shadow-2xl shadow-primary/10 backdrop-blur-xl sm:p-6">
+                  {/* Radar Header */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                        <Radio size={20} className="animate-pulse" />
                       </div>
-                      <div className="mt-1 font-display text-4xl font-bold leading-none tabular-nums">
-                        {available}
-                        <span className="text-xl text-muted-foreground"> / {slots.length}</span>
+                      <div>
+                        <div className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
+                          Facility Radar · Level 01
+                          <span className="size-2 rounded-full bg-success status-pulse" />
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          ESP32 Controller Node #A01 · 24ms ping
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs font-semibold text-muted-foreground">From</div>
-                      <div className="mt-1 font-display text-xl font-bold tabular-nums">
-                        &#8377;{firstHour}
-                        <span className="text-xs font-medium text-muted-foreground">/hr</span>
-                      </div>
+
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
+                          simulatedGate === "OPEN"
+                            ? "bg-success-soft text-success"
+                            : simulatedGate === "OPENING"
+                              ? "bg-warning-soft text-warning animate-pulse"
+                              : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <DoorOpen size={14} />
+                        Gate: {simulatedGate}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-2">
-                    {slots.map(slot => {
-                      const tone =
-                        slot.status === "available"
-                          ? "bg-success-soft border-success/30"
-                          : slot.status === "occupied"
-                            ? "bg-danger-soft border-danger/25"
-                            : slot.status === "reserved"
-                              ? "bg-warning-soft border-warning/30"
-                              : "bg-muted border-border";
-                      const label =
-                        slot.status === "available"
-                          ? "Free"
-                          : slot.status === "occupied"
-                            ? "Taken"
-                            : slot.status === "reserved"
-                              ? "Held"
-                              : "Service";
-                      const text =
-                        slot.status === "available"
-                          ? "text-success"
-                          : slot.status === "occupied"
-                            ? "text-danger"
-                            : slot.status === "reserved"
-                              ? "text-warning"
-                              : "text-muted-foreground";
+                  {/* Simulator Quick Action Toolbar */}
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-canvas p-2.5 text-xs">
+                    <span className="font-medium text-muted-foreground">
+                      Click any bay to toggle state, or trigger gate barrier:
+                    </span>
+                    <button
+                      onClick={triggerGateEntry}
+                      disabled={simulatedGate !== "CLOSED"}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1 font-semibold text-primary-foreground shadow-sm transition hover:bg-success disabled:opacity-50"
+                    >
+                      <Zap size={13} />
+                      Simulate Entry
+                    </button>
+                  </div>
+
+                  {/* Live 8-Bay Facility Grid */}
+                  <div className="mt-4 grid grid-cols-4 gap-2.5 sm:gap-3">
+                    {slots.map((slot) => {
+                      const isSelected = selectedSlotId === slot.id;
+                      const isAvail = slot.status === "available";
+                      const isOcc = slot.status === "occupied";
+                      const isRes = slot.status === "reserved";
+
                       return (
-                        <div
+                        <button
                           key={slot.id}
-                          className={`flex flex-col items-center justify-center rounded-md border py-3 ${tone}`}
+                          onClick={() => {
+                            setSelectedSlotId(slot.id);
+                          }}
+                          onDoubleClick={() => handleToggleSlotStatus(slot.id)}
+                          title={`Click to inspect, double-click to toggle`}
+                          className={`group relative flex flex-col items-center justify-between rounded-xl border p-3 text-center transition-all duration-200 ${
+                            isSelected ? "ring-2 ring-primary ring-offset-2" : ""
+                          } ${
+                            isAvail
+                              ? "border-success/30 bg-success-soft/60 hover:bg-success-soft"
+                              : isOcc
+                                ? "border-danger/30 bg-danger-soft/60 hover:bg-danger-soft"
+                                : isRes
+                                  ? "border-warning/30 bg-warning-soft/60 hover:bg-warning-soft"
+                                  : "border-border bg-muted/60"
+                          }`}
                         >
-                          <CarFront
-                            size={16}
-                            className={`mb-1.5 ${text} ${slot.status === "available" ? "opacity-40" : ""}`}
-                          />
-                          <span className="font-display text-xs font-bold text-foreground">
-                            {slot.id}
+                          {/* Bay Header */}
+                          <div className="flex w-full items-center justify-between text-[10px] font-bold">
+                            <span className="font-display font-bold text-foreground">{slot.id}</span>
+                            <span
+                              className={`size-2 rounded-full ${
+                                isAvail ? "bg-success" : isOcc ? "bg-danger" : "bg-warning"
+                              }`}
+                            />
+                          </div>
+
+                          {/* Vehicle Graphic */}
+                          <div className="my-2 flex size-8 items-center justify-center">
+                            <CarFront
+                              size={22}
+                              className={`transition-transform group-hover:scale-110 ${
+                                isAvail
+                                  ? "text-success/35"
+                                  : isOcc
+                                    ? "text-danger"
+                                    : isRes
+                                      ? "text-warning"
+                                      : "text-muted-foreground"
+                              }`}
+                            />
+                          </div>
+
+                          {/* Bay Status Label */}
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                              isAvail
+                                ? "text-success"
+                                : isOcc
+                                  ? "text-danger"
+                                  : isRes
+                                    ? "text-warning"
+                                    : "text-muted-foreground"
+                            }`}
+                          >
+                            {slot.status}
                           </span>
-                          <span className={`text-[10px] font-semibold ${text}`}>{label}</span>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
 
-                  <div className="mt-5 grid grid-cols-3 gap-2 border-t border-border pt-4 text-center">
+                  {/* Selected Bay Quick Inspector */}
+                  <div className="mt-4 rounded-xl border border-border/80 bg-background/80 p-3.5 backdrop-blur-md">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display text-sm font-bold text-foreground">
+                          Bay {currentSlot.id}
+                        </span>
+                        <span
+                          className={`rounded px-2 py-0.5 text-[11px] font-bold capitalize ${
+                            currentSlot.status === "available"
+                              ? "bg-success-soft text-success"
+                              : currentSlot.status === "occupied"
+                                ? "bg-danger-soft text-danger"
+                                : "bg-warning-soft text-warning"
+                          }`}
+                        >
+                          {currentSlot.status}
+                        </span>
+                        {currentSlot.vehicle && (
+                          <span className="font-mono text-xs font-semibold text-muted-foreground">
+                            [{currentSlot.vehicle}]
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleToggleSlotStatus(currentSlot.id)}
+                          className="rounded-md border border-input bg-card px-2.5 py-1 text-xs font-semibold text-foreground transition hover:bg-secondary"
+                        >
+                          Toggle Status
+                        </button>
+                        <Link to="/overview">
+                          <span className="text-xs font-semibold text-primary hover:underline">
+                            View in Dashboard &rarr;
+                          </span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Activity size={13} className="text-primary" />
+                      <span className="truncate">{lastActivityMessage}</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Stats Footer */}
+                  <div className="mt-4 grid grid-cols-3 gap-2 border-t border-border pt-3 text-center">
                     <div>
-                      <Radio size={14} className="mx-auto mb-1 text-success" />
-                      <div className="text-[11px] text-muted-foreground">Sensors</div>
-                      <div className="text-xs font-bold">10/10</div>
+                      <div className="text-[11px] text-muted-foreground">Occupancy Rate</div>
+                      <div className="font-display text-sm font-bold text-foreground">
+                        {occupancyPercentage}%
+                      </div>
                     </div>
                     <div>
-                      <Gauge size={14} className="mx-auto mb-1 text-success" />
-                      <div className="text-[11px] text-muted-foreground">Gate</div>
-                      <div className="text-xs font-bold">Open</div>
+                      <div className="text-[11px] text-muted-foreground">Available Spots</div>
+                      <div className="font-display text-sm font-bold text-success">
+                        {availableCount} free
+                      </div>
                     </div>
                     <div>
-                      <IndianRupee size={14} className="mx-auto mb-1 text-info" />
-                      <div className="text-[11px] text-muted-foreground">Today</div>
-                      <div className="text-xs font-bold tabular-nums">&#8377;12,450</div>
+                      <div className="text-[11px] text-muted-foreground">Base Hourly</div>
+                      <div className="font-display text-sm font-bold text-foreground">
+                        ₹{firstHour}/hr
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
 
-              <div className="panel subtle-shadow absolute -bottom-6 -left-4 hidden w-52 p-4 sm:block">
-                <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-success">
-                  <span className="size-1.5 rounded-full bg-success status-pulse" />
-                  Entry detected
+        {/* ------------------------------------------------------------------ */}
+        {/* TELEMETRY & HARDWARE STRIP                                         */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="border-y border-border/80 bg-card/60 backdrop-blur-md">
+          <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-4 lg:gap-8">
+              <div className="flex items-center gap-3.5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <ShieldCheck size={22} />
                 </div>
-                <div className="mt-2 font-display text-sm font-bold">TN 38 AB 1234</div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">
-                  Gate opened &middot; bay S02
+                <div>
+                  <div className="font-display text-2xl font-extrabold text-foreground">
+                    99.98%
+                  </div>
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Hardware Edge Uptime
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-info-soft text-info">
+                  <Gauge size={22} />
+                </div>
+                <div>
+                  <div className="font-display text-2xl font-extrabold text-foreground">
+                    &lt; 0.9s
+                  </div>
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Gate Clearance Speed
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning">
+                  <TrendingUp size={22} />
+                </div>
+                <div>
+                  <div className="font-display text-2xl font-extrabold text-foreground">
+                    +38%
+                  </div>
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Peak Turnover Growth
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3.5">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-success-soft text-success">
+                  <IndianRupee size={22} />
+                </div>
+                <div>
+                  <div className="font-display text-2xl font-extrabold text-foreground">
+                    100%
+                  </div>
+                  <div className="text-xs font-medium text-muted-foreground">
+                    Automated Billing Audit
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat
-              icon={CircleParking}
-              value="8"
-              label="Live bays on this floor"
-              tone="bg-info-soft text-info"
-            />
-            <Stat
-              icon={Gauge}
-              value="0.9s"
-              label="Average gate response"
-              tone="bg-success-soft text-success"
-            />
-            <Stat
-              icon={IndianRupee}
-              value="&#8377;12,450"
-              label="Revenue collected today"
-              tone="bg-warning-soft text-warning"
-            />
-            <Stat
-              icon={Cpu}
-              value="10/10"
-              label="Sensors reporting"
-              tone="bg-danger-soft text-danger"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="border-t border-border bg-card">
-        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-          <div className="max-w-2xl">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-primary">
-              <span className="h-px w-5 bg-primary" />
-              What you get
-            </div>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-              One system for the whole facility
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Everything from the gate to the revenue report, built on the same live data &mdash;
-              no integrations to stitch together.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {features.map(feature => (
-              <div
-                key={feature.title}
-                className="panel subtle-shadow card-lift p-6"
-              >
-                <span className="flex size-11 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <feature.icon size={21} />
-                </span>
-                <h3 className="mt-5 font-display text-lg font-bold tracking-tight">
-                  {feature.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {feature.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how" className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-          <div className="max-w-2xl">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-primary">
-              <span className="h-px w-5 bg-primary" />
-              How it works
-            </div>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-              Live in three steps
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Most facilities are running before the end of the day.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-5 lg:grid-cols-3">
-            {steps.map(item => (
-              <div key={item.step} className="panel subtle-shadow card-lift relative p-6 lg:p-7">
-                <span className="font-display text-4xl font-bold text-primary/25">
-                  {item.step}
-                </span>
-                <h3 className="mt-4 font-display text-lg font-bold tracking-tight">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {item.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Views split */}
-      <section className="border-t border-border bg-card">
-        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-          <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-            <div className="flex flex-col justify-center">
-              <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-primary">
-                <span className="h-px w-5 bg-primary" />
-                For operators
-              </div>
-              <h2 className="font-display text-3xl font-bold tracking-tight text-foreground">
-                A control centre your team will actually use
+        {/* ------------------------------------------------------------------ */}
+        {/* IOT HARDWARE ARCHITECTURE (Engineering Credibility)               */}
+        {/* ------------------------------------------------------------------ */}
+        <section id="architecture" className="relative py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <Cpu size={14} />
+                Hardware To Cloud Pipeline
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Engineered for Low Cost,{" "}
+                <span className="text-primary">Zero-Latency Precision.</span>
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                Occupancy, live sessions, slot management and hardware health on a single
-                screen &mdash; built for the person running the gate during the morning rush.
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Unlike complex license plate cameras that fail in low light, SmartPark relies on
+                rugged ultrasonic &amp; IR sensors powered by edge microcontrollers.
               </p>
-              <ul className="mt-7 space-y-3">
-                {[
-                  "Live floor plan with per-bay status and filters",
-                  "Session log with entry, exit, duration and fee",
-                  "Revenue, traffic and peak occupancy analytics",
-                  "Controller, gate and per-sensor health monitoring",
-                ].map(item => (
-                  <li key={item} className="flex items-start gap-3 text-sm text-foreground">
-                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
-                      <ShieldCheck size={13} />
-                    </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/overview" className="mt-8 inline-block">
-                <Button>
-                  Open the dashboard <ArrowRight size={16} />
-                </Button>
-              </Link>
             </div>
 
-            <div className="flex flex-col justify-center">
-              <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-primary">
-                <span className="h-px w-5 bg-primary" />
-                For drivers
+            <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {hardwareSteps.map((step, idx) => (
+                <div
+                  key={step.number}
+                  className="group relative flex flex-col rounded-2xl border border-border/80 bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-display text-4xl font-extrabold text-primary/25 group-hover:text-primary/40">
+                      {step.number}
+                    </span>
+                    <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <step.icon size={20} />
+                    </span>
+                  </div>
+
+                  <h3 className="mt-6 font-display text-lg font-bold tracking-tight text-foreground">
+                    {step.title}
+                  </h3>
+                  <div className="text-xs font-semibold text-primary">{step.subtitle}</div>
+
+                  <p className="mt-3 flex-1 text-xs leading-relaxed text-muted-foreground">
+                    {step.description}
+                  </p>
+
+                  <div className="mt-5 border-t border-border pt-3">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-success">
+                      <CheckCircle2 size={13} />
+                      {step.statusText}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Architecture Banner callout */}
+            <div className="mt-10 rounded-2xl border border-border bg-gradient-to-r from-card via-canvas to-card p-6 sm:p-8">
+              <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+                <div className="max-w-2xl">
+                  <h4 className="font-display text-lg font-bold text-foreground">
+                    Using Custom ESP32 or Arduino Hardware?
+                  </h4>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    SmartPark comes with fully documented, battle-tested C++ firmware for ESP32
+                    boards. Flash your board in minutes with zero proprietary vendor lock-in.
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <Link to="/devices">
+                    <Button variant="secondary" size="sm">
+                      Inspect Device Feed
+                    </Button>
+                  </Link>
+                  <Link to="/overview">
+                    <Button size="sm">
+                      View Live Heartbeat <ArrowRight size={14} />
+                    </Button>
+                  </Link>
+                </div>
               </div>
-              <h2 className="font-display text-3xl font-bold tracking-tight text-foreground">
-                No more circling the block
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* DUAL EXPERIENCE SHOWCASE (Operator vs Driver)                     */}
+        {/* ------------------------------------------------------------------ */}
+        <section id="showcase" className="border-t border-border/80 bg-canvas py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <Layers size={14} />
+                Tailored Dual Interface
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Complete Command for Operators.{" "}
+                <span className="text-primary">Pure Ease for Drivers.</span>
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                Drivers check availability, reserve a bay and know the fee before they set off.
-                Mobile-first, and it works even when the signal is poor.
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Switch between perspectives to see how SmartPark powers operations while eliminating
+                driver friction.
               </p>
-              <ul className="mt-7 space-y-3">
-                {[
-                  "Real-time bay map with one-tap selection",
-                  "Reserve a specific space for a chosen arrival time",
-                  "Upfront fee estimate with a clear per-hour breakdown",
-                  "Parking history and saved vehicles in one profile",
-                ].map(item => (
-                  <li key={item} className="flex items-start gap-3 text-sm text-foreground">
-                    <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-info-soft text-info">
-                      <ShieldCheck size={13} />
+
+              {/* Tab Selector Buttons */}
+              <div className="mt-8 inline-flex rounded-xl border border-border bg-card p-1.5 shadow-sm">
+                <button
+                  onClick={() => setShowcaseTab("operator")}
+                  className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-xs font-bold transition-all sm:text-sm ${
+                    showcaseTab === "operator"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Gauge size={16} />
+                  Facility Operator Console
+                </button>
+                <button
+                  onClick={() => setShowcaseTab("driver")}
+                  className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-xs font-bold transition-all sm:text-sm ${
+                    showcaseTab === "driver"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Smartphone size={16} />
+                  Mobile Driver App (PWA)
+                </button>
+              </div>
+            </div>
+
+            {/* Showcase Stage */}
+            <div className="mt-14">
+              {showcaseTab === "operator" ? (
+                <div className="grid items-center gap-10 rounded-3xl border border-border/90 bg-card p-6 shadow-xl lg:grid-cols-12 lg:p-10">
+                  <div className="lg:col-span-5">
+                    <span className="inline-flex items-center gap-2 rounded-md bg-info-soft px-2.5 py-1 text-xs font-bold text-info">
+                      For Operations &amp; Property Managers
                     </span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <Link to="/driver" className="mt-8 inline-block">
-                <Button variant="secondary">
-                  See the driver view <ArrowRight size={16} />
-                </Button>
-              </Link>
+                    <h3 className="mt-4 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                      Centralized Control Over Every Bay, Gate, and Rupee
+                    </h3>
+                    <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                      No more blind spots. The operator console unifies live telemetry, gate barrier
+                      actuation, real-time revenue velocity, and vehicle audit trails.
+                    </p>
+
+                    <div className="mt-6 space-y-3.5">
+                      {[
+                        "Live interactive floor plan with bay occupancy overrides",
+                        "Automated entry & exit session auditing with instant fee breakdown",
+                        "ESP32 hardware heartbeat and pin diagnostic alerts",
+                        "Peak hour yield analysis, dwell duration, and turnover rates",
+                      ].map((item) => (
+                        <div key={item} className="flex items-start gap-3 text-sm">
+                          <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
+                            <Check size={13} />
+                          </span>
+                          <span className="text-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-8 flex items-center gap-3">
+                      <Link to="/overview">
+                        <Button className="h-11">
+                          Open Operator Console <ArrowRight size={16} />
+                        </Button>
+                      </Link>
+                      <Link to="/analytics">
+                        <Button variant="secondary" className="h-11">
+                          View Analytics Preview
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Operator Visual Preview Container */}
+                  <div className="lg:col-span-7">
+                    <div className="rounded-2xl border border-border bg-canvas p-5 shadow-inner">
+                      <div className="flex items-center justify-between border-b border-border pb-3 text-xs">
+                        <div className="flex items-center gap-2 font-bold">
+                          <CircleParking size={16} className="text-primary" />
+                          <span>Operator Hub · Main Level</span>
+                        </div>
+                        <span className="flex items-center gap-1.5 text-success font-semibold">
+                          <span className="size-2 rounded-full bg-success status-pulse" />
+                          Live Syncing (24ms)
+                        </span>
+                      </div>
+
+                      {/* Mini Live Stats Cards */}
+                      <div className="mt-4 grid grid-cols-3 gap-3">
+                        <div className="rounded-xl border border-border bg-card p-3">
+                          <div className="text-[11px] text-muted-foreground">Available Bays</div>
+                          <div className="font-display text-xl font-bold text-success">
+                            {availableCount}
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-border bg-card p-3">
+                          <div className="text-[11px] text-muted-foreground">Occupied Bays</div>
+                          <div className="font-display text-xl font-bold text-danger">
+                            {occupiedCount}
+                          </div>
+                        </div>
+                        <div className="rounded-xl border border-border bg-card p-3">
+                          <div className="text-[11px] text-muted-foreground">Today's Revenue</div>
+                          <div className="font-display text-xl font-bold text-foreground">
+                            ₹12,450
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mini Bay Matrix */}
+                      <div className="mt-4 rounded-xl border border-border bg-card p-4">
+                        <div className="mb-2 text-xs font-semibold text-muted-foreground">
+                          Slot Allocation Matrix (Live)
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {slots.slice(0, 8).map((s) => (
+                            <div
+                              key={s.id}
+                              className={`flex flex-col items-center justify-center rounded-lg border py-2.5 text-xs font-bold ${
+                                s.status === "available"
+                                  ? "border-success/30 bg-success-soft text-success"
+                                  : s.status === "occupied"
+                                    ? "border-danger/30 bg-danger-soft text-danger"
+                                    : "border-warning/30 bg-warning-soft text-warning"
+                              }`}
+                            >
+                              <span>{s.id}</span>
+                              <span className="text-[9px] uppercase">{s.status}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Barrier Gate Servo: Interlocked</span>
+                        <Link to="/parking" className="font-bold text-primary hover:underline">
+                          Inspect Complete Floor Plan &rarr;
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid items-center gap-10 rounded-3xl border border-border/90 bg-card p-6 shadow-xl lg:grid-cols-12 lg:p-10">
+                  <div className="lg:col-span-5">
+                    <span className="inline-flex items-center gap-2 rounded-md bg-accent px-2.5 py-1 text-xs font-bold text-accent-foreground">
+                      For Drivers &amp; Commuters
+                    </span>
+                    <h3 className="mt-4 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                      Zero Circling, Zero Cash Confusion, Zero Frustration
+                    </h3>
+                    <p className="mt-4 text-sm leading-relaxed text-muted-foreground sm:text-base">
+                      Give drivers the superpower of knowing exactly which bay is open before they
+                      turn into your parking garage.
+                    </p>
+
+                    <div className="mt-6 space-y-3.5">
+                      {[
+                        "Real-time visual map shows open, occupied, and reserved bays",
+                        "One-tap spot reservation guarantees spot upon arrival",
+                        "Transparent upfront pricing calculator with no hidden checkout fees",
+                        "Digital ticket timer with saved vehicles and parking history",
+                      ].map((item) => (
+                        <div key={item} className="flex items-start gap-3 text-sm">
+                          <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                            <Check size={13} />
+                          </span>
+                          <span className="text-foreground">{item}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-8 flex items-center gap-3">
+                      <Link to="/driver">
+                        <Button className="h-11">
+                          Test Driver App Now <ArrowRight size={16} />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Driver Visual Preview Container (Smartphone Frame) */}
+                  <div className="flex justify-center lg:col-span-7">
+                    <div className="w-full max-w-sm rounded-[32px] border-4 border-foreground/15 bg-card p-4 shadow-2xl">
+                      {/* Phone Speaker & Camera Notch */}
+                      <div className="mx-auto mb-4 h-4 w-28 rounded-full bg-foreground/10" />
+
+                      {/* Driver App Header */}
+                      <div className="flex items-center justify-between border-b border-border pb-3">
+                        <div>
+                          <div className="font-display text-sm font-bold">SmartPark Driver</div>
+                          <div className="text-[11px] text-muted-foreground">Chennai Central Lot</div>
+                        </div>
+                        <span className="rounded-full bg-success-soft px-2 py-0.5 text-[10px] font-bold text-success">
+                          {availableCount} Spots Free
+                        </span>
+                      </div>
+
+                      {/* Active Spot Booking Card */}
+                      <div className="mt-4 rounded-xl border border-primary/30 bg-primary/10 p-3.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-primary">Guaranteed Bay</span>
+                          <span className="font-display text-sm font-bold text-foreground">S01</span>
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          Rate: ₹{firstHour}/1st hr · ₹{extraHour}/extra hr
+                        </div>
+                        <Link to="/driver" className="mt-3 block">
+                          <Button size="sm" className="w-full">
+                            Reserve Bay Now
+                          </Button>
+                        </Link>
+                      </div>
+
+                      {/* Saved Vehicle Preview */}
+                      <div className="mt-3.5 rounded-xl border border-border bg-canvas p-3">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Active Vehicle</span>
+                          <span className="font-mono font-bold text-foreground">TN 38 AB 1234</span>
+                        </div>
+                      </div>
+
+                      {/* Mini Map representation */}
+                      <div className="mt-3.5 rounded-xl border border-border p-3 text-center text-xs text-muted-foreground">
+                        <div className="flex items-center justify-center gap-1.5 font-semibold text-foreground">
+                          <Navigation size={14} className="text-primary" />
+                          Turn-by-turn guidance to Bay S01
+                        </div>
+                        <div className="mt-1 text-[11px]">Level 01 · Right turn from Gate 1</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-          <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-3 flex items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-primary">
-              <span className="h-px w-5 bg-primary" />
-              Pricing
-              <span className="h-px w-5 bg-primary" />
+        {/* ------------------------------------------------------------------ */}
+        {/* INTERACTIVE REVENUE & LEAKAGE ROI CALCULATOR                      */}
+        {/* ------------------------------------------------------------------ */}
+        <section id="calculator" className="py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <IndianRupee size={14} />
+                Facility Yield Calculator
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                How Much Revenue Is Your Lot{" "}
+                <span className="text-primary">Leaving on the Table?</span>
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Manual slip tracking and unmetered turnover leak up to 18% of parking revenues.
+                Calculate your projected returns with SmartPark automated telemetry.
+              </p>
             </div>
-            <h2 className="font-display text-3xl font-bold tracking-tight text-foreground lg:text-4xl">
-              Priced per bay, not per headache
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Start with a single floor and scale when you are ready. Every plan includes the
-              driver app and hardware monitoring.
-            </p>
-          </div>
 
-          <div className="mx-auto mt-12 grid max-w-5xl gap-5 lg:grid-cols-3">
-            {[
-              {
-                name: "Starter",
-                price: "₹1,200",
-                unit: "per bay / month",
-                body: "For single-floor facilities getting started.",
-                features: ["Live availability map", "Driver reservations", "Session log", "Email support"],
-                cta: "Start with Starter",
-                href: "/overview",
-                featured: false,
-              },
-              {
-                name: "Facility",
-                price: "₹2,400",
-                unit: "per bay / month",
-                body: "For multi-level facilities running daily traffic.",
-                features: [
-                  "Everything in Starter",
-                  "Revenue & traffic analytics",
-                  "Hardware health monitoring",
-                  "Priority support",
-                ],
-                cta: "Choose Facility",
-                href: "/overview",
-                featured: true,
-              },
-              {
-                name: "Enterprise",
-                price: "Custom",
-                unit: "multi-site",
-                body: "For operators running several locations.",
-                features: [
-                  "Everything in Facility",
-                  "Multi-site dashboard",
-                  "Custom integrations",
-                  "Dedicated engineer",
-                ],
-                cta: "Talk to us",
-                href: "/overview",
-                featured: false,
-              },
-            ].map(plan => (
-              <div
-                key={plan.name}
-                className={
-                  plan.featured
-                    ? "relative flex flex-col rounded-md border border-primary bg-card p-6 shadow-xl shadow-primary/10 lg:p-7"
-                    : "panel subtle-shadow flex flex-col p-6 lg:p-7"
-                }
-              >
-                {plan.featured && (
-                  <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-primary-foreground">
-                    Most popular
+            <div className="mt-16 grid gap-10 rounded-3xl border border-border/80 bg-card p-6 shadow-xl lg:grid-cols-12 lg:p-10">
+              {/* Sliders Column */}
+              <div className="space-y-8 lg:col-span-6">
+                <div>
+                  <div className="flex justify-between text-sm font-bold">
+                    <span className="text-foreground">Total Parking Bays</span>
+                    <span className="font-display text-primary">{calcBays} Bays</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={8}
+                    max={200}
+                    step={2}
+                    value={calcBays}
+                    onChange={(e) => setCalcBays(Number(e.target.value))}
+                    className="mt-3 h-2 w-full cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>8 bays (Pilot)</span>
+                    <span>100 bays (Mid)</span>
+                    <span>200+ bays (Campus)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-sm font-bold">
+                    <span className="text-foreground">Average Turnover Per Bay (Daily)</span>
+                    <span className="font-display text-primary">{calcTurnover} Vehicles/day</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={calcTurnover}
+                    onChange={(e) => setCalcTurnover(Number(e.target.value))}
+                    className="mt-3 h-2 w-full cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>1 car (Low churn)</span>
+                    <span>5 cars (Standard mall)</span>
+                    <span>10 cars (Transit hub)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-sm font-bold">
+                    <span className="text-foreground">Base Hourly Parking Rate</span>
+                    <span className="font-display text-primary">₹{calcRate}/hour</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={15}
+                    max={120}
+                    step={5}
+                    value={calcRate}
+                    onChange={(e) => setCalcRate(Number(e.target.value))}
+                    className="mt-3 h-2 w-full cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>₹15/hr</span>
+                    <span>₹50/hr</span>
+                    <span>₹120/hr</span>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-canvas p-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 font-semibold text-foreground">
+                    <Sparkles size={14} className="text-primary" />
+                    Calculation Assumption
+                  </div>
+                  <div className="mt-1">
+                    Based on an average dwell duration of 2.5 hours per session with zero unpaid exits
+                    guaranteed by the servo barrier.
+                  </div>
+                </div>
+              </div>
+
+              {/* Computations Result Column */}
+              <div className="flex flex-col justify-between rounded-2xl border border-primary/30 bg-primary/5 p-6 sm:p-8 lg:col-span-6">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary">
+                    Projected Facility Earnings
                   </span>
-                )}
-                <h3 className="font-display text-lg font-bold tracking-tight">{plan.name}</h3>
-                <p className="mt-1.5 text-xs text-muted-foreground">{plan.body}</p>
-                <div className="mt-6 flex items-baseline gap-1.5">
-                  <span className="font-display text-3xl font-bold tabular-nums">{plan.price}</span>
-                  <span className="text-xs text-muted-foreground">{plan.unit}</span>
+
+                  <div className="mt-4">
+                    <div className="text-xs text-muted-foreground">Estimated Monthly Gross Revenue</div>
+                    <div className="font-display text-4xl font-extrabold text-foreground sm:text-5xl">
+                      ₹{monthlyGross.toLocaleString("en-IN")}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-4 border-t border-border/80 pt-6">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Leakage Recovered</div>
+                      <div className="font-display text-xl font-bold text-success sm:text-2xl">
+                        +₹{leakagePrevented.toLocaleString("en-IN")}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">Monthly leak prevention</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Estimated Payback</div>
+                      <div className="font-display text-xl font-bold text-foreground sm:text-2xl">
+                        &lt; 35 Days
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">Hardware + setup ROI</div>
+                    </div>
+                  </div>
                 </div>
-                <ul className="mt-6 flex-1 space-y-2.5">
-                  {plan.features.map(item => (
-                    <li key={item} className="flex items-start gap-2.5 text-sm">
-                      <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
-                        <ShieldCheck size={11} />
+
+                <div className="mt-8">
+                  <Link to="/overview">
+                    <Button className="h-12 w-full font-bold shadow-lg shadow-primary/20">
+                      Configure Your Lot Rates in Settings &rarr;
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* CORE FEATURES GRID (Glassmorphism & Depth)                         */}
+        {/* ------------------------------------------------------------------ */}
+        <section id="features" className="border-t border-border/80 bg-canvas py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <CheckCircle2 size={14} />
+                Comprehensive Feature Deck
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Every Layer of Your Facility,{" "}
+                <span className="text-primary">Fully Synchronized.</span>
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Engineered from the ground up to eliminate attendant bottlenecks, double bookings,
+                and lost parking tickets.
+              </p>
+            </div>
+
+            <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {coreFeatures.map((feat) => (
+                <div
+                  key={feat.title}
+                  className="group relative flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/5"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
+                        <feat.icon size={22} />
                       </span>
-                      <span className="text-muted-foreground">{item}</span>
+                      <span className="rounded-full border border-border bg-canvas px-2.5 py-0.5 text-[11px] font-bold text-muted-foreground">
+                        {feat.badge}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-6 font-display text-xl font-bold tracking-tight text-foreground">
+                      {feat.title}
+                    </h3>
+                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                      {feat.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-6 border-t border-border pt-4">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
+                      {feat.tag}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* TRANSPARENT PRICING PLANS                                          */}
+        {/* ------------------------------------------------------------------ */}
+        <section id="pricing" className="py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <IndianRupee size={14} />
+                Straightforward Pricing
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Predictable Plans,{" "}
+                <span className="text-primary">Infinite Scale.</span>
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
+                Choose the plan that fits your facility size. All tiers include full access to the
+                driver app and real-time WebSocket feeds.
+              </p>
+
+              {/* Billing Cycle Toggle */}
+              <div className="mt-8 inline-flex items-center gap-3 rounded-full border border-border bg-card p-1.5">
+                <button
+                  onClick={() => setAnnualBilling(false)}
+                  className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
+                    !annualBilling
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Monthly Billing
+                </button>
+                <button
+                  onClick={() => setAnnualBilling(true)}
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
+                    annualBilling
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Annual Billing
+                  <span className="rounded-full bg-success-soft px-1.5 py-0.2 text-[10px] text-success">
+                    Save 20%
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="mx-auto mt-14 grid max-w-6xl gap-8 lg:grid-cols-3">
+              {/* Starter Tier */}
+              <div className="flex flex-col rounded-3xl border border-border/80 bg-card p-8 shadow-sm">
+                <h3 className="font-display text-xl font-bold text-foreground">Starter</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  For single-floor basements &amp; standalone lots.
+                </p>
+
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="font-display text-4xl font-extrabold text-foreground">
+                    {annualBilling ? "₹960" : "₹1,200"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ bay / month</span>
+                </div>
+
+                <ul className="mt-8 flex-1 space-y-3.5 text-xs text-foreground">
+                  {[
+                    "Live 2D floor occupancy map",
+                    "Driver mobile reservations (PWA)",
+                    "Live session tracking & timestamps",
+                    "Community & email support",
+                  ].map((feat) => (
+                    <li key={feat} className="flex items-center gap-2.5">
+                      <Check size={14} className="text-success" />
+                      <span>{feat}</span>
                     </li>
                   ))}
                 </ul>
-                <Link to={plan.href} className="mt-7 block">
-                  <Button
-                    variant={plan.featured ? "primary" : "secondary"}
-                    className="h-11 w-full"
-                  >
-                    {plan.cta} <ArrowRight size={16} />
+
+                <Link to="/overview" className="mt-8 block">
+                  <Button variant="secondary" className="h-11 w-full font-semibold">
+                    Launch Starter Preview
                   </Button>
                 </Link>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Testimonials */}
-      <section className="border-t border-border bg-card">
-        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-          <div className="grid gap-5 lg:grid-cols-3">
-            {testimonials.map(item => (
-              <figure key={item.name} className="panel subtle-shadow card-lift flex flex-col p-6">
-                <p className="flex-1 text-sm leading-relaxed text-foreground">
-                  &ldquo;{item.quote}&rdquo;
+              {/* Facility Tier (Featured) */}
+              <div className="relative flex flex-col rounded-3xl border-2 border-primary bg-card p-8 shadow-2xl shadow-primary/10">
+                <span className="absolute -top-3.5 left-8 rounded-full bg-primary px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-widest text-primary-foreground">
+                  Most Popular · Best Value
+                </span>
+
+                <h3 className="font-display text-xl font-bold text-foreground">Facility</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  For multi-level commercial garages &amp; malls.
                 </p>
-                <figcaption className="mt-6 flex items-center gap-3 border-t border-border pt-5">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-primary-foreground">
-                    {item.name
-                      .split(" ")
-                      .map(part => part[0])
-                      .join("")}
+
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="font-display text-4xl font-extrabold text-foreground">
+                    {annualBilling ? "₹1,920" : "₹2,400"}
                   </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold">{item.name}</div>
-                    <div className="truncate text-[11px] text-muted-foreground">{item.role}</div>
+                  <span className="text-xs text-muted-foreground">/ bay / month</span>
+                </div>
+
+                <ul className="mt-8 flex-1 space-y-3.5 text-xs text-foreground">
+                  {[
+                    "Everything in Starter plan",
+                    "Automated servo gate barrier interlock",
+                    "ESP32 hardware heartbeat & pin diagnostics",
+                    "Revenue & peak occupancy analytics suite",
+                    "Overstay violation & alert triggers",
+                    "Priority 24/7 technical assistance",
+                  ].map((feat) => (
+                    <li key={feat} className="flex items-center gap-2.5">
+                      <Check size={14} className="text-primary" />
+                      <span className="font-medium">{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link to="/overview" className="mt-8 block">
+                  <Button className="h-11 w-full font-bold shadow-md shadow-primary/25">
+                    Launch Facility Deck <ArrowRight size={16} />
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Enterprise Tier */}
+              <div className="flex flex-col rounded-3xl border border-border/80 bg-card p-8 shadow-sm">
+                <h3 className="font-display text-xl font-bold text-foreground">Enterprise</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  For airport authorities &amp; multi-city portfolios.
+                </p>
+
+                <div className="mt-6 flex items-baseline gap-1">
+                  <span className="font-display text-4xl font-extrabold text-foreground">
+                    Custom
+                  </span>
+                  <span className="text-xs text-muted-foreground">multi-campus SLA</span>
+                </div>
+
+                <ul className="mt-8 flex-1 space-y-3.5 text-xs text-foreground">
+                  {[
+                    "Everything in Facility tier",
+                    "Multi-facility fleet overview dashboard",
+                    "Custom REST & Webhook APIs for ERP sync",
+                    "FASTag & RFID barrier integrations",
+                    "Dedicated solutions engineer",
+                  ].map((feat) => (
+                    <li key={feat} className="flex items-center gap-2.5">
+                      <Check size={14} className="text-success" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Link to="/overview" className="mt-8 block">
+                  <Button variant="secondary" className="h-11 w-full font-semibold">
+                    Contact Solutions Team
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* VERIFIED CUSTOMER REVIEWS & SOCIAL PROOF                           */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="border-t border-border/80 bg-canvas py-20 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <Star size={14} className="fill-primary" />
+                Verified Deployments
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
+                Loved by Property Leaders Across India.
+              </h2>
+            </div>
+
+            <div className="mt-16 grid gap-6 md:grid-cols-3">
+              {testimonials.map((t) => (
+                <div
+                  key={t.name}
+                  className="flex flex-col justify-between rounded-2xl border border-border/80 bg-card p-7 shadow-sm transition hover:border-primary/30"
+                >
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-1 text-amber-500">
+                        {Array.from({ length: t.rating }).map((_, i) => (
+                          <Star key={i} size={15} className="fill-amber-400 text-amber-400" />
+                        ))}
+                      </div>
+                      <span className="rounded bg-success-soft px-2 py-0.5 text-[10px] font-bold text-success">
+                        {t.stats}
+                      </span>
+                    </div>
+
+                    <blockquote className="mt-5 text-sm leading-relaxed text-foreground">
+                      &ldquo;{t.quote}&rdquo;
+                    </blockquote>
                   </div>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* CTA */}
-      <section className="border-t border-border">
-        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8 lg:py-24">
-          <div className="relative overflow-hidden rounded-md bg-ink p-8 text-primary-foreground sm:p-12 lg:p-16">
-            <CircleParking
-              size={420}
-              strokeWidth={0.5}
-              aria-hidden
-              className="pointer-events-none absolute -right-24 -top-24 text-primary-foreground/5"
-            />
-            <div className="relative max-w-2xl">
-              <div className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.16em] text-primary">
-                <Sparkles size={13} />
-                Get started
-              </div>
-              <h2 className="font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
-                Know where every car is parked.
+                  <div className="mt-6 border-t border-border pt-4">
+                    <div className="font-display text-sm font-bold text-foreground">{t.name}</div>
+                    <div className="text-xs text-muted-foreground">{t.role}</div>
+                    <div className="text-[11px] font-medium text-primary">{t.facility}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* INTERACTIVE FAQ ACCORDION                                          */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="border-t border-border/80 py-20 lg:py-28">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
+                <HelpCircle size={14} />
+                Frequently Asked Questions
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
+                Everything You Need to Know
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-primary-foreground/60">
-                Explore the operator dashboard or the driver view &mdash; both are live in this
-                preview, no signup required.
-              </p>
-              <div className="mt-9 flex flex-wrap gap-3">
-                <Link to="/overview">
-                  <Button className="h-12 px-6 text-[15px]">
-                    Open the dashboard <ArrowRight size={17} />
-                  </Button>
-                </Link>
-                <Link to="/driver">
-                  <Button
-                    variant="ghost"
-                    className="h-12 border border-primary-foreground/25 px-6 text-[15px] text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+            </div>
+
+            <div className="mt-12 space-y-3">
+              {faqs.map((faq, idx) => {
+                const isOpen = expandedFaq === idx;
+                return (
+                  <div
+                    key={faq.q}
+                    className="overflow-hidden rounded-2xl border border-border/80 bg-card transition"
                   >
-                    Try the driver app
-                  </Button>
-                </Link>
+                    <button
+                      onClick={() => setExpandedFaq(isOpen ? null : idx)}
+                      className="flex w-full items-center justify-between p-5 text-left text-sm font-bold text-foreground transition hover:text-primary sm:text-base"
+                    >
+                      <span>{faq.q}</span>
+                      <ChevronDown
+                        size={18}
+                        className={`shrink-0 transition-transform duration-200 ${
+                          isOpen ? "rotate-180 text-primary" : "text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-border/60 bg-canvas/60 px-5 py-4 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                        {faq.a}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* HIGH-CONVERTING CLOSING BANNER                                     */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="border-t border-border/80 bg-canvas py-20 lg:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-8 text-white shadow-2xl sm:p-14 lg:p-20">
+              {/* Decorative Background Rings */}
+              <CircleParking
+                size={480}
+                strokeWidth={0.3}
+                aria-hidden
+                className="pointer-events-none absolute -right-20 -top-24 text-emerald-400/10"
+              />
+
+              <div className="relative max-w-2xl">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  <Sparkles size={13} />
+                  Immediate Interactive Access
+                </div>
+
+                <h2 className="mt-6 font-display text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl lg:leading-tight">
+                  Stop Guessing Occupancy.{" "}
+                  <span className="text-emerald-400">Start Automating.</span>
+                </h2>
+
+                <p className="mt-5 text-base leading-relaxed text-slate-300 sm:text-lg">
+                  Both the Operator Dashboard and the Driver PWA are active and live in this demo
+                  preview. Test slot status transitions, barrier gate actuation, and revenue metrics
+                  instantly.
+                </p>
+
+                <div className="mt-9 flex flex-wrap items-center gap-4">
+                  <Link to="/overview">
+                    <Button className="h-12 bg-emerald-500 px-7 text-sm font-bold text-slate-950 hover:bg-emerald-400">
+                      Open Operator Dashboard <ArrowRight size={17} />
+                    </Button>
+                  </Link>
+
+                  <Link to="/driver">
+                    <Button
+                      variant="ghost"
+                      className="h-12 border border-white/20 px-6 text-sm font-bold text-white hover:bg-white/10"
+                    >
+                      <Smartphone size={16} />
+                      Open Driver App
+                    </Button>
+                  </Link>
+                </div>
+
+                <div className="mt-8 flex items-center gap-4 text-xs text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 size={14} className="text-emerald-400" />
+                    No credit card required
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 size={14} className="text-emerald-400" />
+                    Live prototype state
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Newsletter / footer CTA */}
-      <section className="border-t border-border bg-canvas">
-        <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-          <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto]">
-            <div>
-              <h2 className="font-display text-2xl font-bold tracking-tight">
-                Get facility updates
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Occasional notes on pricing, hardware and new features. No noise.
-              </p>
+        {/* ------------------------------------------------------------------ */}
+        {/* NEWSLETTER SECTION                                                 */}
+        {/* ------------------------------------------------------------------ */}
+        <section className="border-t border-border/80 bg-card py-14">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-6 lg:grid-cols-12">
+              <div className="lg:col-span-7">
+                <h3 className="font-display text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                  Stay Updated on Smart Parking Innovations
+                </h3>
+                <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
+                  Receive engineering notes on ESP32 firmware upgrades, sensor benchmarks, and
+                  yield management strategies. No spam, ever.
+                </p>
+              </div>
+
+              <div className="lg:col-span-5">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!email.trim()) return;
+                    setSubscribed(true);
+                    setEmail("");
+                  }}
+                  className="flex gap-2"
+                >
+                  <label htmlFor="landing-email" className="sr-only">
+                    Work Email
+                  </label>
+                  <input
+                    id="landing-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="facility.manager@company.com"
+                    className="surface-input h-11 flex-1 px-4 text-sm"
+                  />
+                  <Button type="submit" className="h-11 shrink-0 font-semibold">
+                    {subscribed ? "Subscribed" : "Subscribe"}
+                  </Button>
+                </form>
+                {subscribed && (
+                  <p role="status" className="mt-2 text-xs font-semibold text-success">
+                    Thanks for joining! You are on our technical update list.
+                  </p>
+                )}
+              </div>
             </div>
-            <form
-              onSubmit={event => {
-                event.preventDefault();
-                if (!email.trim()) return;
-                setSubmitted(true);
-                setEmail("");
-              }}
-              className="flex w-full max-w-md gap-2"
-            >
-              <label htmlFor="landing-email" className="sr-only">
-                Work email
-              </label>
-              <input
-                id="landing-email"
-                type="email"
-                required
-                value={email}
-                onChange={event => setEmail(event.target.value)}
-                placeholder="you@company.com"
-                className="surface-input h-11 flex-1 px-4 text-sm"
-              />
-              <Button type="submit" className="h-11 shrink-0">
-                {submitted ? "Subscribed" : "Subscribe"}
-              </Button>
-            </form>
           </div>
-          {submitted && (
-            <p role="status" className="mt-3 text-xs text-success">
-              Thanks &mdash; you are on the list.
-            </p>
-          )}
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card">
-        <div className="mx-auto max-w-7xl px-5 py-12 lg:px-8">
-          <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-            <div>
-              <Link to="/" aria-label="SmartPark home">
+      {/* -------------------------------------------------------------------- */}
+      {/* SITE FOOTER                                                          */}
+      {/* -------------------------------------------------------------------- */}
+      <footer className="border-t border-border/80 bg-canvas py-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <Link to="/" aria-label="SmartPark Home">
                 <Wordmark />
               </Link>
-              <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-                Live parking management for operators and drivers, powered by low-cost sensors.
+              <p className="mt-4 max-w-sm text-xs leading-relaxed text-muted-foreground">
+                Autonomous smart parking infrastructure connecting microcontrollers, ultrasonic
+                sensors, servo barrier gates, and mobile driver booking.
               </p>
-              <div className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin size={14} />
-                Chennai, India
+              <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                <MapPin size={14} className="text-primary" />
+                <span>Chennai &amp; Bengaluru, India</span>
               </div>
             </div>
+
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-                Product
-              </h3>
-              <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Live Platforms
+              </h4>
+              <ul className="mt-3.5 space-y-2 text-xs text-muted-foreground">
                 <li>
-                  <a href="#features" className="transition-colors hover:text-foreground">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#pricing" className="transition-colors hover:text-foreground">
-                    Pricing
-                  </a>
-                </li>
-                <li>
-                  <Link to="/overview" className="transition-colors hover:text-foreground">
-                    Control centre
+                  <Link to="/overview" className="transition hover:text-foreground">
+                    Operator Dashboard
                   </Link>
                 </li>
                 <li>
-                  <Link to="/driver" className="transition-colors hover:text-foreground">
-                    Driver app
+                  <Link to="/driver" className="transition hover:text-foreground">
+                    Driver Web-App (PWA)
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/parking" className="transition hover:text-foreground">
+                    2D Live Parking Map
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/analytics" className="transition hover:text-foreground">
+                    Revenue &amp; Dwell Analytics
                   </Link>
                 </li>
               </ul>
             </div>
+
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-                Company
-              </h3>
-              <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Hardware &amp; System
+              </h4>
+              <ul className="mt-3.5 space-y-2 text-xs text-muted-foreground">
                 <li>
-                  <a href="#how" className="transition-colors hover:text-foreground">
-                    How it works
-                  </a>
+                  <Link to="/devices" className="transition hover:text-foreground">
+                    ESP32 Device Fleet
+                  </Link>
                 </li>
                 <li>
-                  <a href="#pricing" className="transition-colors hover:text-foreground">
-                    Contact sales
-                  </a>
+                  <Link to="/sessions" className="transition hover:text-foreground">
+                    Session Audit Log
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/vehicles" className="transition hover:text-foreground">
+                    Vehicle Directory
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/settings" className="transition hover:text-foreground">
+                    Tariff Rates &amp; Config
+                  </Link>
                 </li>
               </ul>
             </div>
+
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground">
-                Contact
-              </h3>
-              <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
-                <li>hello@smartpark.example</li>
-                <li>+91 44 4000 1234</li>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Contact &amp; Operations
+              </h4>
+              <ul className="mt-3.5 space-y-2 text-xs text-muted-foreground">
+                <li>contact@smartpark.iot</li>
+                <li>+91 (044) 4920-8000</li>
+                <li className="pt-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-success-soft px-2.5 py-0.5 text-[10px] font-bold text-success">
+                    <span className="size-1.5 rounded-full bg-success status-pulse" />
+                    All Edge Nodes Operational
+                  </span>
+                </li>
               </ul>
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-border pt-7 sm:flex-row sm:items-center">
-            <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} SmartPark. Demo interface &mdash; sample data only.
-            </p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="size-1.5 rounded-full bg-success status-pulse" />
-              All systems operational
+          <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 text-xs text-muted-foreground sm:flex-row">
+            <div>
+              &copy; {new Date().getFullYear()} SmartPark Technologies. Open IoT Architecture.
+            </div>
+            <div className="flex gap-4">
+              <a href="#simulator" className="transition hover:text-foreground">
+                Simulator
+              </a>
+              <a href="#pricing" className="transition hover:text-foreground">
+                Pricing
+              </a>
+              <a href="#architecture" className="transition hover:text-foreground">
+                Architecture
+              </a>
             </div>
           </div>
         </div>

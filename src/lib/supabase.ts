@@ -1,6 +1,12 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const url = import.meta.env.VITE_SUPABASE_URL;
+function normalizeSupabaseUrl(value: string | undefined): string | undefined {
+  if (!value) return value;
+  // Guard against common single-'u' typo in project ref
+  return value.replace("xqsrxyblavpbuobahjl", "xqsrxyblavpbuuobahjl");
+}
+
+const url = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL);
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 /**
@@ -34,7 +40,7 @@ export const isSupabaseConfigured: boolean =
   isValidSupabaseUrl(url) && Boolean(anonKey) && import.meta.env.VITE_FORCE_DEMO !== "1";
 
 export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createClient(url, anonKey, {
+  ? createClient(url!, anonKey!, {
       auth: { persistSession: true, autoRefreshToken: true },
       realtime: { params: { eventsPerSecond: 10 } },
     })
