@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Check, Radio, Settings2 } from "lucide-react";
+import { Check, Clock3, Radio, Settings2 } from "lucide-react";
 import { AppShell, SectionHeading } from "@/components/AppShell";
 import { ParkingMap, MapLegend, StatusPill } from "@/components/ParkingMap";
 import { Button } from "@/components/Button";
 import { useParking, type Slot } from "@/lib/parking-context";
+import { latestSession } from "@/lib/sessions";
 import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/parking")({
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/parking")({
 const filters = ["All slots", "Available", "Occupied", "Reserved", "Maintenance"] as const;
 
 function ParkingPage() {
-  const { slots, updateSlot, liveFeed } = useParking();
+  const { slots, updateSlot, liveFeed, sessions } = useParking();
   const [filter, setFilter] = useState<(typeof filters)[number]>("All slots");
   const liveBays = liveFeed.receiving ? liveFeed.slotIds : [];
 
@@ -42,10 +43,7 @@ function ParkingPage() {
               )
             }
           />
-          <ParkingMap
-            liveSlotIds={liveBays}
-            gateOpen={liveFeed.receiving ? liveFeed.gateOpen : undefined}
-          />
+          <ParkingMap liveSlotIds={liveBays} />
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
             <MapLegend />
             {liveBays.length > 0 && (
@@ -79,6 +77,17 @@ function ParkingPage() {
           <div className="divide-y divide-border">
             {shown.map((slot) => {
               const isLive = liveBays.includes(slot.id);
+              const session = latestSession(sessions, slot.id);
+              let timing: string | undefined;
+              if (
+                slot.status === "occupied" &&
+                session?.status === "Active" &&
+                session.arrival !== "—"
+              ) {
+                timing = `Arrived ${session.arrival}`;
+              } else if (slot.status === "available" && session?.departure) {
+                timing = `Departed ${session.departure}`;
+              }
               return (
                 <div key={slot.id} className="flex flex-wrap items-center gap-3 py-3 first:pt-0">
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-muted font-display text-xs font-bold">
@@ -100,6 +109,16 @@ function ParkingPage() {
                         ? "Reported by controller sensor"
                         : (slot.vehicle ?? `Sensor ${slot.id} · Level 01`)}
                     </div>
+                    {timing && (
+                      <div
+                        className={`mt-0.5 flex items-center gap-1 text-[11px] font-semibold ${
+                          slot.status === "occupied" ? "text-danger" : "text-success"
+                        }`}
+                      >
+                        <Clock3 size={11} className="shrink-0" />
+                        <span className="tabular-nums">{timing}</span>
+                      </div>
+                    )}
                   </div>
                   <StatusPill status={slot.status} />
                   <select

@@ -1,4 +1,13 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useLiveStatus, useRealtimeConnected } from "./supabase-hooks";
 import { isSupabaseConfigured, supabaseConfigProblem } from "./supabase";
 import {
@@ -8,10 +17,13 @@ import {
   mergeLiveSlots,
   readingAgeSeconds,
 } from "./live-parking";
+import { clockTime, type ParkingSession } from "./sessions";
 import type { LiveStatus } from "./supabase-schema";
 
 type SlotStatus = "available" | "occupied" | "reserved" | "maintenance";
 export type Slot = { id: string; status: SlotStatus; vehicle?: string | undefined };
+/** Servo barrier position, shared so every view reports the same gate state. */
+export type GateStatus = "CLOSED" | "OPENING" | "OPEN";
 export type Vehicle = { plate: string; type: string; model: string; color: string };
 export type Event = {
   id: number;
@@ -92,10 +104,55 @@ const initialEvents: Event[] = [
   },
 ];
 
+/**
+ * Seed sessions mirror the demo floor: the two occupied bays are active, and
+ * two completed stays give the history table something to show from the start.
+ */
+const initialSessions: ParkingSession[] = [
+  {
+    id: 1,
+    slot: "S02",
+    plate: "TN 38 AB 1234",
+    arrival: "10:32:14",
+    departure: null,
+    status: "Active",
+  },
+  {
+    id: 2,
+    slot: "S04",
+    plate: "TN 01 XY 5678",
+    arrival: "09:48:07",
+    departure: null,
+    status: "Active",
+  },
+  {
+    id: 3,
+    slot: "S03",
+    plate: "TN 09 CD 4021",
+    arrival: "08:30:00",
+    departure: "10:12:20",
+    status: "Completed",
+  },
+  {
+    id: 4,
+    slot: "S01",
+    plate: "TN 42 KL 9102",
+    arrival: "07:15:00",
+    departure: "09:02:41",
+    status: "Completed",
+  },
+];
+
 type ParkingContext = {
   slots: Slot[];
   vehicles: Vehicle[];
   events: Event[];
+  /** Vehicle stays with arrival and departure timestamps, newest first. */
+  sessions: ParkingSession[];
+  /** Gate position shown app-wide: the controller feed when receiving, else the demo gate. */
+  gate: GateStatus;
+  /** Move the demo gate. A receiving controller owns the real barrier and overrides this. */
+  setGate: (status: GateStatus) => void;
   firstHour: number;
   extraHour: number;
   dailyMax: number;
@@ -119,24 +176,25 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
     { plate: "TN 01 XY 5678", type: "Bike", model: "Honda Activa", color: "Black" },
   ]);
   const [events, setEvents] = useState(initialEvents);
+  const [sessions, setSessions] = useState<ParkingSession[]>(initialSessions);
+  const [demoGate, setDemoGateState] = useState<GateStatus>("CLOSED");
   const [rates, setRatesState] = useState({ firstHour: 20, extraHour: 10, dailyMax: 100 });
 
   const { data: live, error: liveError } = useLiveStatus();
   const connected = useRealtimeConnected();
 
-  const addEvent = (kind: string, detail: string, tone: Event["tone"]) =>
-    setEvents((prev) => [
-      {
-        id: Date.now(),
-        kind,
-        detail,
-        time: new Date().toLocaleTimeString("en-IN", { hour12: false }),
-        tone,
-      },
-      ...prev,
-    ]);
+  const sessionSeq = useRef(initialSessions.length);
+
+  const addEvent = useCallback(
+    (kind: string, detail: string, tone: Event["tone"]) =>
+      setEvents((prev) => [{ id: Date.now(), kind, detail, time: clockTime(), tone }, ...prev]),
+    [],
+  );
+
+  const setGate = useCallback((status: GateStatus) => setDemoGateState(status), []);
 
   const updateSlot = (id: string, status: SlotStatus) => {
+    const before = demoSlots.find((slot) => slot.id === id)?.status;
     setDemoSlots((prev) =>
       prev.map((slot) =>
         slot.id === id
@@ -150,11 +208,18 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
           : slot,
       ),
     );
-    addEvent(
-      "Slot status updated",
-      `${id} · ${status.charAt(0).toUpperCase()}${status.slice(1)}`,
-      status === "available" ? "success" : status === "occupied" ? "danger" : "warning",
-    );
+
+    // Arrivals and departures get their timestamps logged by the status watcher
+    // below, so only other manual changes need an event from here.
+    const isArrival = status === "occupied" && before !== "occupied";
+    const isDeparture = before === "occupied" && status !== "occupied";
+    if (!isArrival && !isDeparture) {
+      addEvent(
+        "Slot status updated",
+        `${id} · ${status.charAt(0).toUpperCase()}${status.slice(1)}`,
+        status === "available" ? "success" : status === "occupied" ? "danger" : "warning",
+      );
+    }
   };
   const reserveSlot = (id: string, plate: string, arrival: string) => {
     setDemoSlots((prev) =>
@@ -168,6 +233,60 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
   const setRates = (next: typeof rates) => setRatesState(next);
 
   const slots = useMemo(() => mergeLiveSlots(demoSlots, live), [demoSlots, live]);
+
+  // Watch every bay's status — manual changes and live sensor readings alike —
+  // and stamp a session the moment a vehicle arrives or leaves.
+  const previousStatus = useRef<Record<string, SlotStatus> | null>(null);
+  useEffect(() => {
+    const next: Record<string, SlotStatus> = {};
+    for (const slot of slots) next[slot.id] = slot.status;
+
+    const previous = previousStatus.current;
+    previousStatus.current = next;
+    // The first pass only records a baseline, so the seeded floor is not
+    // mistaken for a wave of arrivals.
+    if (!previous) return;
+
+    for (const slot of slots) {
+      const before = previous[slot.id];
+      if (before === undefined || before === slot.status) continue;
+
+      const time = clockTime();
+      const plate = slot.vehicle ?? "Unregistered vehicle";
+      sessionSeq.current += 1;
+      const id = sessionSeq.current;
+
+      if (slot.status === "occupied") {
+        setSessions((list) =>
+          list.some((s) => s.slot === slot.id && s.status === "Active")
+            ? list
+            : [
+                { id, slot: slot.id, plate, arrival: time, departure: null, status: "Active" },
+                ...list,
+              ],
+        );
+        addEvent("Vehicle arrived", `${slot.id} · ${plate} · Arrived ${time}`, "success");
+      } else if (before === "occupied") {
+        setSessions((list) => {
+          let closed = false;
+          const updated = list.map((session) => {
+            if (!closed && session.slot === slot.id && session.status === "Active") {
+              closed = true;
+              return { ...session, departure: time, status: "Completed" as const };
+            }
+            return session;
+          });
+          return closed
+            ? updated
+            : [
+                { id, slot: slot.id, plate, arrival: "—", departure: time, status: "Completed" },
+                ...list,
+              ];
+        });
+        addEvent("Vehicle departed", `${slot.id} · ${plate} · Departed ${time}`, "info");
+      }
+    }
+  }, [slots, addEvent]);
 
   const liveFeed = useMemo<LiveFeed>(() => {
     if (!isSupabaseConfigured) {
@@ -193,11 +312,32 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
     };
   }, [connected, live, liveError]);
 
+  // Gate position across the whole app. A receiving controller wins because it
+  // is the real barrier; otherwise the demo/simulated gate drives every view.
+  const gate: GateStatus = liveFeed.receiving
+    ? liveFeed.gateOpen
+      ? "OPEN"
+      : "CLOSED"
+    : demoGate;
+
+  const previousGate = useRef<GateStatus | null>(null);
+  useEffect(() => {
+    const previous = previousGate.current;
+    previousGate.current = gate;
+    // Baseline on first render; only log real open/close movements.
+    if (!previous || previous === gate) return;
+    if (gate === "OPEN") addEvent("Gate opened", "Servo barrier raised", "success");
+    else if (gate === "CLOSED") addEvent("Gate closed", "Servo barrier lowered", "info");
+  }, [gate, addEvent]);
+
   const value = useMemo<ParkingContext>(
     () => ({
       slots,
       vehicles,
       events,
+      sessions,
+      gate,
+      setGate,
       ...rates,
       live: live ?? null,
       liveFeed,
@@ -207,7 +347,7 @@ export function ParkingProvider({ children }: { children: ReactNode }) {
       removeVehicle,
       setRates,
     }),
-    [slots, vehicles, events, rates, live, liveFeed],
+    [slots, vehicles, events, sessions, gate, setGate, rates, live, liveFeed],
   );
 
   return <Context.Provider value={value}>{children}</Context.Provider>;

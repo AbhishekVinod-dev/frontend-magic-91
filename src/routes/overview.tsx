@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   ArrowUpRight,
+  ArrowDownLeft,
   CarFront,
   CircleParking,
   Clock3,
@@ -29,11 +30,15 @@ export const Route = createFileRoute("/overview")({
 });
 
 function Overview() {
-  const { slots, liveFeed } = useParking();
+  const { slots, liveFeed, sessions, gate } = useParking();
   const available = slots.filter((s) => s.status === "available").length;
   const occupied = slots.filter((s) => s.status === "occupied").length;
   const occupancy = slots.length ? Math.round((occupied / slots.length) * 100) : 0;
   const liveBays = liveFeed.receiving ? liveFeed.slotIds : [];
+
+  // Sessions are newest-first, so the first match is the most recent movement.
+  const latestArrival = sessions.find((session) => session.arrival !== "—");
+  const latestDeparture = sessions.find((session) => session.departure);
 
   const metrics = [
     {
@@ -116,11 +121,7 @@ function Overview() {
               </Link>
             }
           />
-          <ParkingMap
-            compact
-            liveSlotIds={liveBays}
-            gateOpen={liveFeed.receiving ? liveFeed.gateOpen : undefined}
-          />
+          <ParkingMap compact liveSlotIds={liveBays} />
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
             <MapLegend />
             <span className="text-xs text-muted-foreground">
@@ -215,14 +216,14 @@ function Overview() {
                 <Gauge
                   size={16}
                   className={
-                    liveFeed.receiving
-                      ? "mx-auto mb-1 text-success"
-                      : "mx-auto mb-1 text-muted-foreground"
+                    gate === "CLOSED"
+                      ? "mx-auto mb-1 text-muted-foreground"
+                      : "mx-auto mb-1 text-success"
                   }
                 />
                 <span className="block text-[11px] text-muted-foreground">Gate</span>
                 <div className="text-xs font-semibold">
-                  {liveFeed.receiving ? (liveFeed.gateOpen ? "Open" : "Closed") : "Unknown"}
+                  {gate === "OPEN" ? "Open" : gate === "OPENING" ? "Opening" : "Closed"}
                 </div>
               </div>
               <div className="px-1">
@@ -242,6 +243,54 @@ function Overview() {
                       : `${liveFeed.ageSeconds}s ago`
                     : "—"}
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="panel p-5 sm:p-6">
+            <SectionHeading
+              title="Arrivals & departures"
+              aside={
+                <Link
+                  to="/sessions"
+                  className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                >
+                  View sessions <ArrowUpRight size={14} />
+                </Link>
+              }
+            />
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 rounded-md bg-canvas p-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-success-soft text-success">
+                  <ArrowDownLeft size={19} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] text-muted-foreground">Latest arrival</div>
+                  <div className="truncate text-sm font-semibold">
+                    {latestArrival
+                      ? `${latestArrival.slot} · ${latestArrival.plate}`
+                      : "No arrivals yet"}
+                  </div>
+                </div>
+                <time className="shrink-0 font-mono text-sm font-bold tabular-nums">
+                  {latestArrival?.arrival ?? "—"}
+                </time>
+              </div>
+              <div className="flex items-center gap-3 rounded-md bg-canvas p-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-info-soft text-info">
+                  <ArrowUpRight size={19} />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] text-muted-foreground">Latest departure</div>
+                  <div className="truncate text-sm font-semibold">
+                    {latestDeparture
+                      ? `${latestDeparture.slot} · ${latestDeparture.plate}`
+                      : "No departures yet"}
+                  </div>
+                </div>
+                <time className="shrink-0 font-mono text-sm font-bold tabular-nums">
+                  {latestDeparture?.departure ?? "—"}
+                </time>
               </div>
             </div>
           </section>

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Activity,
+  ArrowDownLeft,
   ArrowRight,
   ArrowUpRight,
   BarChart3,
@@ -40,6 +41,7 @@ import { useState, useId } from "react";
 import { Button } from "@/components/Button";
 import { Wordmark } from "@/components/AppShell";
 import { useParking, type Slot } from "@/lib/parking-context";
+import { clockTime, latestSession } from "@/lib/sessions";
 import { pageMeta } from "@/lib/page-meta";
 
 export const Route = createFileRoute("/")({
@@ -212,11 +214,10 @@ const faqs = [
 /* -------------------------------------------------------------------------- */
 
 function LandingPage() {
-  const { slots, updateSlot, firstHour, extraHour, dailyMax } = useParking();
+  const { slots, updateSlot, firstHour, extraHour, dailyMax, sessions, gate, setGate } = useParking();
 
   // Interactive Hero Simulator States
   const [selectedSlotId, setSelectedSlotId] = useState<string>("S01");
-  const [simulatedGate, setSimulatedGate] = useState<"CLOSED" | "OPENING" | "OPEN">("CLOSED");
   const [lastActivityMessage, setLastActivityMessage] = useState<string>(
     "ESP32 Telemetry online · 8 bays reporting active",
   );
@@ -250,16 +251,19 @@ function LandingPage() {
 
   // Current selected slot object
   const currentSlot = slots.find((s) => s.id === selectedSlotId) || slots[0];
+  const currentSession = currentSlot ? latestSession(sessions, currentSlot.id) : undefined;
 
   // Simulator actions
   const triggerGateEntry = () => {
-    if (simulatedGate !== "CLOSED") return;
-    setSimulatedGate("OPENING");
+    if (gate !== "CLOSED") return;
+    setGate("OPENING");
     setLastActivityMessage("Proximity sensor triggered · Vehicle detected at Entrance Gate");
 
     setTimeout(() => {
-      setSimulatedGate("OPEN");
-      setLastActivityMessage("Servo Gate OPEN (90°) · Vehicle TN 38 AB 1234 entering bay");
+      setGate("OPEN");
+      setLastActivityMessage(
+        `Servo Gate OPEN (90°) · Vehicle TN 38 AB 1234 entering bay · Arrived ${clockTime()}`,
+      );
 
       // Auto assign first available bay if any
       const freeSlot = slots.find((s) => s.status === "available");
@@ -269,7 +273,7 @@ function LandingPage() {
       }
 
       setTimeout(() => {
-        setSimulatedGate("CLOSED");
+        setGate("CLOSED");
         setLastActivityMessage("Vehicle cleared entry beam · Servo Gate CLOSED (0°)");
       }, 3200);
     }, 1000);
@@ -281,13 +285,13 @@ function LandingPage() {
 
     if (target.status === "available") {
       updateSlot(slotId, "occupied");
-      setLastActivityMessage(`Bay ${slotId} sensor beam broken · State -> OCCUPIED`);
+      setLastActivityMessage(`Bay ${slotId} sensor beam broken · Arrived ${clockTime()}`);
     } else if (target.status === "occupied") {
       updateSlot(slotId, "available");
-      setLastActivityMessage(`Bay ${slotId} vehicle departed · State -> AVAILABLE`);
+      setLastActivityMessage(`Bay ${slotId} vehicle departed · Departed ${clockTime()}`);
     } else if (target.status === "reserved") {
       updateSlot(slotId, "occupied");
-      setLastActivityMessage(`Reserved driver parked in Bay ${slotId} · State -> OCCUPIED`);
+      setLastActivityMessage(`Reserved driver parked in Bay ${slotId} · Arrived ${clockTime()}`);
     } else {
       updateSlot(slotId, "available");
       setLastActivityMessage(`Maintenance completed on Bay ${slotId} · State -> AVAILABLE`);
@@ -484,15 +488,15 @@ function LandingPage() {
 
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${simulatedGate === "OPEN"
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${gate === "OPEN"
                             ? "bg-success-soft text-success"
-                            : simulatedGate === "OPENING"
+                            : gate === "OPENING"
                               ? "bg-warning-soft text-warning animate-pulse"
                               : "bg-muted text-muted-foreground"
                           }`}
                       >
                         <DoorOpen size={14} />
-                        Gate: {simulatedGate}
+                        Gate: {gate}
                       </span>
                     </div>
                   </div>
@@ -504,7 +508,7 @@ function LandingPage() {
                     </span>
                     <button
                       onClick={triggerGateEntry}
-                      disabled={simulatedGate !== "CLOSED"}
+                      disabled={gate !== "CLOSED"}
                       className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1 font-semibold text-primary-foreground shadow-sm transition hover:bg-success disabled:opacity-50"
                     >
                       <Zap size={13} />
@@ -623,6 +627,32 @@ function LandingPage() {
                       <Activity size={13} className="text-primary" />
                       <span className="truncate">{lastActivityMessage}</span>
                     </div>
+
+                    {currentSession && (
+                      <div className="mt-2.5 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border/70 pt-2.5 text-xs">
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <ArrowDownLeft size={13} className="text-success" />
+                          Arrival
+                          <time className="font-mono font-semibold tabular-nums text-foreground">
+                            {currentSession.arrival}
+                          </time>
+                        </span>
+                        <span className="flex items-center gap-1.5 text-muted-foreground">
+                          <ArrowUpRight size={13} className="text-info" />
+                          Departure
+                          {currentSession.departure ? (
+                            <time className="font-mono font-semibold tabular-nums text-foreground">
+                              {currentSession.departure}
+                            </time>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 font-semibold text-success">
+                              <span className="size-1.5 rounded-full bg-success status-pulse" />
+                              In progress
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Bottom Stats Footer */}

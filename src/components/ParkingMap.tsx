@@ -8,6 +8,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { useParking, type Slot } from "@/lib/parking-context";
+import { latestSession } from "@/lib/sessions";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
 
@@ -59,17 +60,14 @@ export function ParkingMap({
   onSelect,
   selected,
   liveSlotIds,
-  gateOpen,
 }: {
   compact?: boolean;
   onSelect?: (id: string) => void;
   selected?: string | undefined;
   /** Bays whose status comes from the controller rather than demo state. */
   liveSlotIds?: readonly string[] | undefined;
-  /** Gate position from the controller. `undefined` leaves the demo label. */
-  gateOpen?: boolean | undefined;
 }) {
-  const { slots } = useParking();
+  const { slots, sessions, gate } = useParking();
   const liveBays = liveSlotIds ?? [];
 
   return (
@@ -86,10 +84,10 @@ export function ParkingMap({
           <span
             className={cn(
               "size-1.5 rounded-full",
-              gateOpen === false ? "bg-muted-foreground" : "bg-success",
+              gate === "CLOSED" ? "bg-muted-foreground" : "bg-success status-pulse",
             )}
           />
-          {gateOpen === false ? "Gate closed" : "Gate open"}
+          {gate === "OPEN" ? "Gate open" : gate === "OPENING" ? "Gate opening" : "Gate closed"}
         </span>
         <span>Entry &rarr;</span>
       </div>
@@ -115,6 +113,20 @@ export function ParkingMap({
                     : ParkingSquare;
 
           const isLive = liveBays.includes(slot.id);
+
+          // Arrival shows while a vehicle is parked; the departure time stays on
+          // the card after it leaves so the bay's last movement is never lost.
+          const session = latestSession(sessions, slot.id);
+          let timing: string | undefined;
+          if (
+            slot.status === "occupied" &&
+            session?.status === "Active" &&
+            session.arrival !== "—"
+          ) {
+            timing = `Arrived ${session.arrival}`;
+          } else if (slot.status === "available" && session?.departure) {
+            timing = `Left ${session.departure}`;
+          }
 
           return (
             <Button
@@ -150,9 +162,16 @@ export function ParkingMap({
                   className={cn("shrink-0 transition-transform", t.icon, isSelected && "scale-110")}
                 />
               </div>
-              <span className={cn("text-[10px] font-semibold sm:text-xs", t.icon)}>
-                {slot.status === "occupied" && slot.vehicle ? slot.vehicle : t.label}
-              </span>
+              <div className="flex w-full flex-col gap-0.5">
+                <span className={cn("text-[10px] font-semibold sm:text-xs", t.icon)}>
+                  {slot.status === "occupied" && slot.vehicle ? slot.vehicle : t.label}
+                </span>
+                {timing && (
+                  <span className="text-[9px] font-medium tabular-nums text-muted-foreground sm:text-[10px]">
+                    {timing}
+                  </span>
+                )}
+              </div>
             </Button>
           );
         })}

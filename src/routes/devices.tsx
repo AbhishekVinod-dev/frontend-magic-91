@@ -55,7 +55,7 @@ function Dot({ tone }: { tone: SensorTone }) {
 }
 
 function DevicesPage() {
-  const { liveFeed, live } = useParking();
+  const { liveFeed, live, gate } = useParking();
   useTick(liveFeed.receiving);
 
   const online = liveFeed.receiving && !liveFeed.stale;
@@ -77,8 +77,8 @@ function DevicesPage() {
     },
     {
       label: "Gate servo",
-      value: liveFeed.receiving ? (liveFeed.gateOpen ? "Open" : "Closed") : "Unknown",
-      detail: liveFeed.receiving ? "From gate_status" : "Awaiting reading",
+      value: gate === "OPEN" ? "Open" : gate === "OPENING" ? "Opening" : "Closed",
+      detail: liveFeed.receiving ? "From gate_status" : "Demo gate state",
       icon: DoorOpen,
     },
     {
@@ -113,7 +113,7 @@ function DevicesPage() {
     ["Device ID", liveFeed.deviceId ?? "ESP32-PARK-001"],
     ["Device type", "ESP32 controller"],
     ["Bays wired", liveFeed.receiving ? String(liveFeed.availability.total) : "Unknown"],
-    ["Gate", liveFeed.receiving ? (liveFeed.gateOpen ? "Open" : "Closed") : "Unknown"],
+    ["Gate", gate === "OPEN" ? "Open" : gate === "OPENING" ? "Opening" : "Closed"],
     ["Firmware writes", liveFeed.receiving ? "Every ~5 seconds" : "No data received"],
     ["Last seen", ago(liveFeed.ageSeconds)],
   ];
