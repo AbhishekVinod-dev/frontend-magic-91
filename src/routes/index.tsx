@@ -20,6 +20,7 @@ import {
   Layers,
   MapPin,
   Maximize2,
+  Menu,
   Navigation,
   QrCode,
   Radio,
@@ -32,6 +33,7 @@ import {
   Timer,
   TrendingUp,
   Wifi,
+  X,
   Zap,
 } from "lucide-react";
 import { useState, useId } from "react";
@@ -52,6 +54,15 @@ export const Route = createFileRoute("/")({
 /* -------------------------------------------------------------------------- */
 /* Static Data & Configurations                                               */
 /* -------------------------------------------------------------------------- */
+
+const navLinks = [
+  { href: "#simulator", label: "Live Simulator" },
+  { href: "#architecture", label: "IoT Architecture" },
+  { href: "#showcase", label: "Dual Experience" },
+  { href: "#calculator", label: "ROI Calculator" },
+  { href: "#features", label: "Features" },
+  { href: "#pricing", label: "Pricing" },
+] as const;
 
 const coreFeatures = [
   {
@@ -228,6 +239,9 @@ function LandingPage() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
+  // Mobile navigation drawer
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
   // Derived metrics from live context
   const availableCount = slots.filter((s) => s.status === "available").length;
   const occupiedCount = slots.filter((s) => s.status === "occupied").length;
@@ -301,50 +315,28 @@ function LandingPage() {
       {/* -------------------------------------------------------------------- */}
       {/* Sticky Frosted Header                                               */}
       {/* -------------------------------------------------------------------- */}
-      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl transition-all">
+      <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <Link to="/" aria-label="SmartPark Home" className="flex items-center gap-3">
+          <Link to="/" aria-label="SmartPark Home" className="flex shrink-0 items-center gap-3">
             <Wordmark />
-            <span className="hidden items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-[11px] font-semibold text-primary lg:inline-flex">
-              <span className="size-1.5 rounded-full bg-primary status-pulse" />
-              v2.4 IoT Live
-            </span>
           </Link>
 
           <nav
             aria-label="Main Navigation"
-            className="hidden items-center gap-8 text-sm font-medium text-muted-foreground md:flex"
+            className="hidden items-center gap-8 text-sm font-medium text-muted-foreground lg:flex"
           >
-            <a href="#simulator" className="transition-colors hover:text-foreground">
-              Live Simulator
-            </a>
-            <a href="#architecture" className="transition-colors hover:text-foreground">
-              IoT Architecture
-            </a>
-            <a href="#showcase" className="transition-colors hover:text-foreground">
-              Dual Experience
-            </a>
-            <a href="#features" className="transition-colors hover:text-foreground">
-              Features
-            </a>
-            <a href="#calculator" className="transition-colors hover:text-foreground">
-              ROI Calculator
-            </a>
-            <a href="#pricing" className="transition-colors hover:text-foreground">
-              Pricing
-            </a>
+            {navLinks.map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className="transition-colors hover:text-foreground"
+              >
+                {link.label}
+              </a>
+            ))}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Live slot counter pill */}
-            <div className="hidden items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold sm:flex">
-              <span className="size-2 rounded-full bg-success status-pulse" />
-              <span className="text-muted-foreground">Available:</span>
-              <span className="font-display font-bold text-foreground">
-                {availableCount}/{slots.length}
-              </span>
-            </div>
-
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Link to="/driver">
               <Button variant="ghost" size="sm" className="hidden sm:inline-flex">
                 <Smartphone size={15} />
@@ -354,12 +346,51 @@ function LandingPage() {
 
             <Link to="/overview">
               <Button size="sm" className="shadow-md shadow-primary/20">
-                Operator Console
+                <span className="hidden sm:inline">Operator Console</span>
+                <span className="sm:hidden">Console</span>
                 <ArrowRight size={15} />
               </Button>
             </Link>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setMobileNavOpen((open) => !open)}
+              aria-label={mobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileNavOpen}
+            >
+              {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
           </div>
         </div>
+
+        {mobileNavOpen && (
+          <nav
+            aria-label="Mobile Navigation"
+            className="border-t border-border/70 bg-background/95 backdrop-blur-xl lg:hidden"
+          >
+            <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 sm:px-6">
+              {navLinks.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  {link.label}
+                </a>
+              ))}
+              <Link
+                to="/driver"
+                onClick={() => setMobileNavOpen(false)}
+                className="mt-1 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:hidden"
+              >
+                Driver App
+              </Link>
+            </div>
+          </nav>
+        )}
       </header>
 
       <main>
@@ -432,7 +463,7 @@ function LandingPage() {
               </div>
 
               {/* Hero Right: Interactive Live Facility Radar & Simulator */}
-              <div className="lg:col-span-6 xl:col-span-6" id="simulator">
+              <div className="scroll-mt-24 lg:col-span-6 xl:col-span-6" id="simulator">
                 <div className="relative rounded-2xl border border-border/80 bg-card/90 p-5 shadow-2xl shadow-primary/10 backdrop-blur-xl sm:p-6">
                   {/* Radar Header */}
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/80 pb-4">
@@ -453,13 +484,12 @@ function LandingPage() {
 
                     <div className="flex items-center gap-2">
                       <span
-                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${
-                          simulatedGate === "OPEN"
+                        className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${simulatedGate === "OPEN"
                             ? "bg-success-soft text-success"
                             : simulatedGate === "OPENING"
                               ? "bg-warning-soft text-warning animate-pulse"
                               : "bg-muted text-muted-foreground"
-                        }`}
+                          }`}
                       >
                         <DoorOpen size={14} />
                         Gate: {simulatedGate}
@@ -498,25 +528,22 @@ function LandingPage() {
                           }}
                           onDoubleClick={() => handleToggleSlotStatus(slot.id)}
                           title={`Click to inspect, double-click to toggle`}
-                          className={`group relative flex flex-col items-center justify-between rounded-xl border p-3 text-center transition-all duration-200 ${
-                            isSelected ? "ring-2 ring-primary ring-offset-2" : ""
-                          } ${
-                            isAvail
+                          className={`group relative flex flex-col items-center justify-between rounded-xl border p-3 text-center transition-all duration-200 ${isSelected ? "ring-2 ring-primary ring-offset-2" : ""
+                            } ${isAvail
                               ? "border-success/30 bg-success-soft/60 hover:bg-success-soft"
                               : isOcc
                                 ? "border-danger/30 bg-danger-soft/60 hover:bg-danger-soft"
                                 : isRes
                                   ? "border-warning/30 bg-warning-soft/60 hover:bg-warning-soft"
                                   : "border-border bg-muted/60"
-                          }`}
+                            }`}
                         >
                           {/* Bay Header */}
                           <div className="flex w-full items-center justify-between text-[10px] font-bold">
                             <span className="font-display font-bold text-foreground">{slot.id}</span>
                             <span
-                              className={`size-2 rounded-full ${
-                                isAvail ? "bg-success" : isOcc ? "bg-danger" : "bg-warning"
-                              }`}
+                              className={`size-2 rounded-full ${isAvail ? "bg-success" : isOcc ? "bg-danger" : "bg-warning"
+                                }`}
                             />
                           </div>
 
@@ -524,29 +551,27 @@ function LandingPage() {
                           <div className="my-2 flex size-8 items-center justify-center">
                             <CarFront
                               size={22}
-                              className={`transition-transform group-hover:scale-110 ${
-                                isAvail
+                              className={`transition-transform group-hover:scale-110 ${isAvail
                                   ? "text-success/35"
                                   : isOcc
                                     ? "text-danger"
                                     : isRes
                                       ? "text-warning"
                                       : "text-muted-foreground"
-                              }`}
+                                }`}
                             />
                           </div>
 
                           {/* Bay Status Label */}
                           <span
-                            className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                              isAvail
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isAvail
                                 ? "text-success"
                                 : isOcc
                                   ? "text-danger"
                                   : isRes
                                     ? "text-warning"
                                     : "text-muted-foreground"
-                            }`}
+                              }`}
                           >
                             {slot.status}
                           </span>
@@ -563,13 +588,12 @@ function LandingPage() {
                           Bay {currentSlot.id}
                         </span>
                         <span
-                          className={`rounded px-2 py-0.5 text-[11px] font-bold capitalize ${
-                            currentSlot.status === "available"
+                          className={`rounded px-2 py-0.5 text-[11px] font-bold capitalize ${currentSlot.status === "available"
                               ? "bg-success-soft text-success"
                               : currentSlot.status === "occupied"
                                 ? "bg-danger-soft text-danger"
                                 : "bg-warning-soft text-warning"
-                          }`}
+                            }`}
                         >
                           {currentSlot.status}
                         </span>
@@ -696,7 +720,7 @@ function LandingPage() {
         {/* ------------------------------------------------------------------ */}
         {/* IOT HARDWARE ARCHITECTURE (Engineering Credibility)               */}
         {/* ------------------------------------------------------------------ */}
-        <section id="architecture" className="relative py-20 lg:py-28">
+        <section id="architecture" className="relative scroll-mt-20 py-20 lg:py-28">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
@@ -779,7 +803,10 @@ function LandingPage() {
         {/* ------------------------------------------------------------------ */}
         {/* DUAL EXPERIENCE SHOWCASE (Operator vs Driver)                     */}
         {/* ------------------------------------------------------------------ */}
-        <section id="showcase" className="border-t border-border/80 bg-canvas py-20 lg:py-28">
+        <section
+          id="showcase"
+          className="scroll-mt-20 border-t border-border/80 bg-canvas py-20 lg:py-28"
+        >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
@@ -799,22 +826,20 @@ function LandingPage() {
               <div className="mt-8 inline-flex rounded-xl border border-border bg-card p-1.5 shadow-sm">
                 <button
                   onClick={() => setShowcaseTab("operator")}
-                  className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-xs font-bold transition-all sm:text-sm ${
-                    showcaseTab === "operator"
+                  className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-xs font-bold transition-all sm:text-sm ${showcaseTab === "operator"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Gauge size={16} />
                   Facility Operator Console
                 </button>
                 <button
                   onClick={() => setShowcaseTab("driver")}
-                  className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-xs font-bold transition-all sm:text-sm ${
-                    showcaseTab === "driver"
+                  className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-xs font-bold transition-all sm:text-sm ${showcaseTab === "driver"
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   <Smartphone size={16} />
                   Mobile Driver App (PWA)
@@ -913,13 +938,12 @@ function LandingPage() {
                           {slots.slice(0, 8).map((s) => (
                             <div
                               key={s.id}
-                              className={`flex flex-col items-center justify-center rounded-lg border py-2.5 text-xs font-bold ${
-                                s.status === "available"
+                              className={`flex flex-col items-center justify-center rounded-lg border py-2.5 text-xs font-bold ${s.status === "available"
                                   ? "border-success/30 bg-success-soft text-success"
                                   : s.status === "occupied"
                                     ? "border-danger/30 bg-danger-soft text-danger"
                                     : "border-warning/30 bg-warning-soft text-warning"
-                              }`}
+                                }`}
                             >
                               <span>{s.id}</span>
                               <span className="text-[9px] uppercase">{s.status}</span>
@@ -1036,7 +1060,7 @@ function LandingPage() {
         {/* ------------------------------------------------------------------ */}
         {/* INTERACTIVE REVENUE & LEAKAGE ROI CALCULATOR                      */}
         {/* ------------------------------------------------------------------ */}
-        <section id="calculator" className="py-20 lg:py-28">
+        <section id="calculator" className="scroll-mt-20 py-20 lg:py-28">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
@@ -1178,7 +1202,10 @@ function LandingPage() {
         {/* ------------------------------------------------------------------ */}
         {/* CORE FEATURES GRID (Glassmorphism & Depth)                         */}
         {/* ------------------------------------------------------------------ */}
-        <section id="features" className="border-t border-border/80 bg-canvas py-20 lg:py-28">
+        <section
+          id="features"
+          className="scroll-mt-20 border-t border-border/80 bg-canvas py-20 lg:py-28"
+        >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
@@ -1233,7 +1260,7 @@ function LandingPage() {
         {/* ------------------------------------------------------------------ */}
         {/* TRANSPARENT PRICING PLANS                                          */}
         {/* ------------------------------------------------------------------ */}
-        <section id="pricing" className="py-20 lg:py-28">
+        <section id="pricing" className="scroll-mt-20 py-20 lg:py-28">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-3xl text-center">
               <span className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-widest text-primary">
@@ -1253,21 +1280,19 @@ function LandingPage() {
               <div className="mt-8 inline-flex items-center gap-3 rounded-full border border-border bg-card p-1.5">
                 <button
                   onClick={() => setAnnualBilling(false)}
-                  className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
-                    !annualBilling
+                  className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${!annualBilling
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   Monthly Billing
                 </button>
                 <button
                   onClick={() => setAnnualBilling(true)}
-                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${
-                    annualBilling
+                  className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition ${annualBilling
                       ? "bg-primary text-primary-foreground"
                       : "text-muted-foreground hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   Annual Billing
                   <span className="rounded-full bg-success-soft px-1.5 py-0.2 text-[10px] text-success">
@@ -1472,9 +1497,8 @@ function LandingPage() {
                       <span>{faq.q}</span>
                       <ChevronDown
                         size={18}
-                        className={`shrink-0 transition-transform duration-200 ${
-                          isOpen ? "rotate-180 text-primary" : "text-muted-foreground"
-                        }`}
+                        className={`shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-primary" : "text-muted-foreground"
+                          }`}
                       />
                     </button>
                     {isOpen && (
